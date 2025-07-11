@@ -1,0 +1,23 @@
+# S647 Blender Addon Requirements
+# Install with: pip install -r requirements.txt
+
+# OpenAI API client - latest stable version as of July 2025
+openai==1.95.0
+
+# Model Context Protocol (MCP) SDK - latest stable version
+mcp>=1.0.0
+
+# Additional dependencies (usually included with OpenAI)
+httpx>=0.24.0
+pydantic>=2.0.0
+typing-extensions>=4.7.0
+
+# Optional: For enhanced functionality
+requests>=2.31.0
+
+# MCP specific dependencies
+anyio>=4.0.0  # For async support in MCP
+contextlib2>=21.6.0  # Enhanced context managers
+
+# Windows-specific dependencies
+pywin32>=306  # Provides pywintypes and other Windows COM/API access
