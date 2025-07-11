@@ -15,16 +15,25 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-memory"
-      ]
+      ],
+      "description": "Persistent memory for AI conversations and knowledge management.",
+      "enabled": true,
+      "timeout": 30
     },
     "ddg-search": {
       "command": "uvx",
-      "args": ["duckduckgo-mcp-server"]
+      "args": ["duckduckgo-mcp-server"],
+      "description": "DuckDuckGo search integration for web searches.",
+      "enabled": true,
+      "timeout": 30
     },
     "screenMonitorMCP": {
       "command": "python",
-      "args": ["c:/Users/tpoyr/OneDrive/Desktop/S647/ScreenMonitorMCP/main.py"],
-      "cwd": "c:/Users/tpoyr/OneDrive/Desktop/S647/ScreenMonitorMCP"
+      "args": ["c:/Users/tpoyr/OneDrive/Desktop/ScreenMonitorMCP/main.py"],
+      "cwd": "c:/Users/tpoyr/OneDrive/Desktop/ScreenMonitorMCP",
+      "description": "Screen monitoring and AI vision capabilities for Blender.",
+      "enabled": true,
+      "timeout": 60
     }
   }
 }

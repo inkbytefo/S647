@@ -65,9 +65,12 @@ Example JSON format:
 ```
 
 #### Method 2: mcp.json File
-1. Create or edit `mcp.json` file in the S647 addon directory
-2. Use Claude Desktop compatible JSON format
-3. Click "Load mcp.json" in preferences or MCP panel
+1. Copy `mcp.json.example` to `mcp.json` in the S647 addon directory
+2. Edit `mcp.json` to customize your MCP server configuration
+3. Use Claude Desktop compatible JSON format
+4. Click "Load mcp.json" in preferences or MCP panel
+
+**Note**: The `mcp.json` file is user-specific and excluded from version control. Use `mcp.json.example` as a template to create your own configuration.
 
 #### Method 3: Through UI
 1. Open S647 panel in 3D Viewport sidebar
@@ -90,6 +93,25 @@ mcp_client.add_mcp_server(
 # Connect to the server
 mcp_client.connect_mcp_server("weather_server")
 ```
+
+### Example Configuration File
+
+The `mcp.json.example` file provides a comprehensive template with common MCP servers:
+
+- **sequential-thinking**: Advanced problem-solving and analysis
+- **memory**: Persistent conversation memory
+- **ddg-search**: DuckDuckGo web search integration
+- **context7**: Library documentation and examples
+- **desktop-commander**: File operations and system commands
+- **mcp-compass**: MCP server discovery and recommendations
+- **screenMonitorMCP**: Screen monitoring and AI vision (requires custom setup)
+- **custom-local-server**: Template for your own MCP servers
+
+To use the example:
+1. Copy `mcp.json.example` to `mcp.json`
+2. Update file paths (especially for screenMonitorMCP and custom servers)
+3. Set `"enabled": true` for servers you want to use
+4. Adjust timeout values if needed (default: 30 seconds)
 
 ### Server Configuration Examples
 

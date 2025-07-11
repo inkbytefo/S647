@@ -1,0 +1,77 @@
+{
+  "mcpServers": {
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "description": "Dynamic and reflective problem-solving through thought sequences. Helps AI break down complex problems into manageable steps with revision and branching capabilities.",
+      "enabled": true,
+      "timeout": 30
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "description": "Persistent memory for AI conversations and knowledge management.",
+      "enabled": true,
+      "timeout": 30
+    },
+    "ddg-search": {
+      "command": "uvx",
+      "args": ["duckduckgo-mcp-server"],
+      "description": "DuckDuckGo search integration for web searches.",
+      "enabled": true,
+      "timeout": 30
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@context7/mcp-server"
+      ],
+      "description": "Context7 library documentation and code examples.",
+      "enabled": false,
+      "timeout": 30
+    },
+    "desktop-commander": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-desktop-commander"
+      ],
+      "description": "Desktop file operations and command execution.",
+      "enabled": false,
+      "timeout": 30
+    },
+    "mcp-compass": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-mcp-compass"
+      ],
+      "description": "Discover and recommend MCP servers.",
+      "enabled": false,
+      "timeout": 30
+    },
+    "screenMonitorMCP": {
+      "command": "python",
+      "args": ["C:/path/to/your/ScreenMonitorMCP/main.py"],
+      "cwd": "C:/path/to/your/ScreenMonitorMCP",
+      "description": "Screen monitoring and AI vision capabilities for Blender.",
+      "enabled": false,
+      "timeout": 60
+    },
+    "custom-local-server": {
+      "command": "python",
+      "args": ["path/to/your/custom/server.py"],
+      "cwd": "path/to/your/custom/server/directory",
+      "description": "Your custom MCP server implementation.",
+      "enabled": false,
+      "timeout": 30
+    }
+  }
+}
