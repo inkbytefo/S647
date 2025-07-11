@@ -160,11 +160,22 @@ def process_prompt_async(prompt: str):
                 props.ai_status = 'idle'
                 props.ai_status_message = "Ready"
 
+                # Debug: Log response length
+                print(f"S647: AI response length: {len(response_text)} characters")
+
                 # Add assistant message with current thread
                 from . import utils
                 has_code = bool(utils.extract_python_code(response_text))
                 props.add_message('assistant', response_text, has_code=has_code,
                                 thread_id=props.current_thread_id, intent_type='response')
+
+                # Debug: Verify message was saved correctly
+                if props.conversation_history:
+                    last_msg = props.conversation_history[-1]
+                    print(f"S647: Saved message length: {len(last_msg.content)} characters")
+                    if len(last_msg.content) != len(response_text):
+                        print(f"S647: WARNING - Message truncated during save!")
+                        print(f"S647: Original: {len(response_text)}, Saved: {len(last_msg.content)}")
 
                 props.successful_requests += 1
                 props.total_requests += 1
@@ -185,13 +196,17 @@ def process_prompt_async(prompt: str):
             bpy.app.timers.register(update_ui, first_interval=0.1)
 
         except Exception as e:
+            # Capture exception information immediately
+            error_message = str(e)
+            error_traceback = traceback.format_exc()
+
             def update_error():
                 props = bpy.context.scene.s647
                 props.ai_status = 'error'
-                props.ai_status_message = f"Error: {str(e)}"
+                props.ai_status_message = f"Error: {error_message}"
                 props.total_requests += 1
-                print(f"S647: AI processing error: {e}")
-                print(f"S647: Traceback: {traceback.format_exc()}")
+                print(f"S647: AI processing error: {error_message}")
+                print(f"S647: Traceback: {error_traceback}")
 
             bpy.app.timers.register(update_error, first_interval=0.1)
 
@@ -209,13 +224,37 @@ def get_blender_context_for_ai() -> Dict[str, Any]:
     from . import utils
 
     try:
-        scene = bpy.context.scene
-        props = scene.s647
+        # Safely get scene and properties
+        scene = getattr(bpy.context, 'scene', None)
+        if not scene:
+            print("S647: Warning - No scene available in context")
+            return {
+                "error": "No scene available",
+                "blender_version": bpy.app.version_string,
+                "scene_name": "No Scene",
+                "mode": "UNKNOWN",
+                "active_object": None,
+                "selected_objects": [],
+                "total_objects": 0
+            }
 
-        context_info = utils.get_blender_context_info(props.context_mode)
+        props = getattr(scene, 's647', None)
+        if not props:
+            print("S647: Warning - S647 properties not available")
+            # Use default context mode
+            context_mode = 'standard'
+        else:
+            context_mode = getattr(props, 'context_mode', 'standard')
 
-        # Add conversation history
-        context_info['conversation_history'] = props.get_conversation_context()
+        context_info = utils.get_blender_context_info(context_mode)
+
+        # Add conversation history if props available
+        if props:
+            try:
+                context_info['conversation_history'] = props.get_conversation_context()
+            except Exception as e:
+                print(f"S647: Error getting conversation context: {e}")
+                context_info['conversation_history'] = []
 
         # Add MCP resources if available
         if _mcp_available:
@@ -239,18 +278,42 @@ def get_blender_context_for_ai() -> Dict[str, Any]:
         return context_info
     except Exception as e:
         print(f"S647: Error getting Blender context: {e}")
-        return {"error": str(e)}
+        import traceback
+        print(f"S647: Traceback: {traceback.format_exc()}")
+        return {
+            "error": str(e),
+            "blender_version": bpy.app.version_string,
+            "scene_name": "Error",
+            "mode": "UNKNOWN",
+            "active_object": None,
+            "selected_objects": [],
+            "total_objects": 0
+        }
 
 def create_ai_prompt(user_prompt: str, context_info: Dict[str, Any], interaction_mode: str = 'chat') -> str:
     """
     Create a complete prompt for the AI including system instructions and context
-
-    This will be used when implementing the full OpenAI integration.
     """
+    try:
+        from .prompts import PromptManager
+
+        # Get system prompt with context using centralized system
+        return PromptManager.get_system_prompt(
+            mode=interaction_mode,
+            context=context_info,
+            user_request=user_prompt
+        )
+    except ImportError:
+        # Fallback to legacy method
+        return _create_legacy_ai_prompt(user_prompt, context_info, interaction_mode)
+
+
+def _create_legacy_ai_prompt(user_prompt: str, context_info: Dict[str, Any], interaction_mode: str = 'chat') -> str:
+    """Legacy AI prompt creation (fallback)"""
     from . import utils
 
     # Get mode-specific system prompt
-    system_prompt = _create_mode_specific_system_prompt(interaction_mode)
+    system_prompt = utils.create_system_prompt(interaction_mode)
 
     # Format context information
     context_text = f"""
@@ -265,6 +328,7 @@ Current Blender Context:
     full_prompt = f"{system_prompt}\n\n{context_text}\n\nUser Request: {user_prompt}"
 
     return full_prompt
+
 
 def _create_mode_specific_system_prompt(interaction_mode: str) -> str:
     """Create system prompt based on interaction mode"""

@@ -6,7 +6,7 @@ An advanced Blender addon that integrates OpenAI's powerful language models to a
 
 ### 💬 **Unified Chat Interface**
 - **Modern Chat Experience**: Single, streamlined interface inspired by leading AI assistants
-- **Smart Mode Pills**: Easy switching between Chat, Act, and Hybrid modes
+- **Smart Mode Pills**: Easy switching between Chat and Act modes
 - **Message Bubbles**: Clean, modern message display with timestamps
 - **Instant Actions**: Apply, explain, or modify AI-generated code with one click
 - **Context-Aware Input**: Smart placeholders and suggestions based on current mode
@@ -14,7 +14,6 @@ An advanced Blender addon that integrates OpenAI's powerful language models to a
 ### 🎯 **Interaction Modes**
 - **💬 Chat Mode**: Conversational, educational interactions perfect for learning
 - **⚡ Act Mode**: Task-focused, direct action and automation
-- **🧠 Hybrid Mode**: Smart mode switching based on context and intent
 
 ### 🧠 **Advanced AI Capabilities**
 - **AI-Powered Assistance**: Specialized AI assistant for Blender workflows

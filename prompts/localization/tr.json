@@ -1,0 +1,203 @@
+{
+  "_meta": {
+    "name": "Turkish",
+    "native_name": "Türkçe",
+    "version": "1.0.0",
+    "author": "S647 Development Team",
+    "completion": 100,
+    "description": "Turkish language pack for S647",
+    "base_language": "en"
+  },
+  "ui_texts": {
+    "panel_titles": {
+      "main_panel": "S647 AI Asistanı",
+      "context_panel": "Bağlam ve Hafıza",
+      "suggestions_panel": "Akıllı Öneriler",
+      "advanced_panel": "Gelişmiş Seçenekler",
+      "code_execution_panel": "Kod Çalıştırma",
+      "mcp_panel": "MCP Entegrasyonu"
+    },
+    "buttons": {
+      "send": {
+        "chat": "💬 Gönder",
+        "act": "⚡ Çalıştır",
+        "hybrid": "🧠 İşle",
+        "default": "Gönder"
+      },
+      "clear": "🗑️ Temizle",
+      "save": "💾 Kaydet",
+      "copy": "📋 Kopyala",
+      "execute": "▶ Uygula",
+      "explain": "❓ Açıkla",
+      "modify": "✏️ Değiştir",
+      "suggestions": "🎯 Öneriler",
+      "context": "📎 Bağlam",
+      "voice": "🎤 Ses",
+      "voice_soon": "🎤 Ses (Yakında)",
+      "settings": "⚙️ Ayarlar",
+      "test_connection": "Bağlantıyı Test Et",
+      "reinitialize": "Yeniden Başlat",
+      "debug": "Hata Ayıklama",
+      "refresh": "Yenile",
+      "toggle": "Değiştir"
+    },
+    "placeholders": {
+      "input": {
+        "chat": "💬 Blender hakkında her şeyi sorabilirsin...",
+        "act": "⚡ Blender'da ne yapmak istediğini söyle...",
+        "hybrid": "🧠 Sohbet et ya da komut ver - uyum sağlarım...",
+        "default": "Mesajınızı yazın..."
+      },
+      "search": "🔍 Ara...",
+      "filename": "Dosya adını girin...",
+      "url": "URL girin...",
+      "api_key": "API anahtarını girin..."
+    },
+    "status": {
+      "thinking": "🤖 S647 düşünüyor...",
+      "responding": "🤖 S647 yanıtlıyor...",
+      "error": "❌ Hata oluştu",
+      "ready": "✅ Hazır",
+      "idle": "💤 Beklemede",
+      "busy": "⏳ AI meşgul...",
+      "connected": "✓ Bağlandı",
+      "disconnected": "✗ Bağlı Değil",
+      "connecting": "⏳ Bağlanıyor..."
+    },
+    "mode_descriptions": {
+      "chat": "💬 Eğitim Odaklı - Blender'ı öğren ve keşfet",
+      "act": "⚡ Eylem Odaklı - İşleri hızlıca halletmek",
+      "hybrid": "🧠 Akıllı Mod Değiştirme - İkisinin de en iyisi"
+    },
+    "welcome": {
+      "main": "👋 S647'ye Hoş Geldin!",
+      "chat": "💬 Blender hakkında her şeyi sorabilirsin - öğrenmene yardım etmek için buradayım!",
+      "act": "⚡ Ne yapmak istediğini söyle, başarmana yardım edeyim!",
+      "hybrid": "🧠 Sohbet et ya da komut ver - ihtiyacına göre uyum sağlarım!",
+      "quick_start": "Dene: 'Bir küp oluştur' veya 'Nasıl materyal eklerim?'"
+    },
+    "sections": {
+      "interaction_mode": "Etkileşim Modu",
+      "conversation": "💬 Konuşma",
+      "message": "✍️ Mesaj",
+      "quick_actions": "🚀 Hızlı Eylemler",
+      "context_settings": "Bağlam Ayarları:",
+      "ai_configuration": "AI Yapılandırması:",
+      "safety_settings": "Güvenlik Ayarları:",
+      "api_status": "API Durumu:",
+      "statistics": "İstatistikler:"
+    }
+  },
+  "messages": {
+    "errors": {
+      "api_key_missing": "⚠️ Tercihlerde AI sağlayıcısını yapılandırın",
+      "api_key_invalid": "⚠️ Geçersiz API anahtarı formatı",
+      "ai_engine_not_ready": "⚠️ AI motoru hazır değil",
+      "connection_failed": "❌ AI servisine bağlanılamadı",
+      "request_failed": "❌ AI isteği başarısız",
+      "code_execution_blocked": "🚫 Güvenlik endişeleri nedeniyle kod çalıştırma engellendi",
+      "code_execution_failed": "❌ Kod çalıştırma başarısız",
+      "file_not_found": "❌ Dosya bulunamadı: {filename}",
+      "invalid_configuration": "❌ Geçersiz yapılandırma",
+      "unknown_error": "❌ Bilinmeyen bir hata oluştu"
+    },
+    "warnings": {
+      "api_key_missing_openai": "⚠️ S647'nin çalışması için API anahtarı gerekli",
+      "custom_provider_incomplete": "⚠️ Tüm özel sağlayıcı alanları gerekli",
+      "automatic_execution_dangerous": "⚠️ Otomatik kod çalıştırma tehlikeli olabilir!",
+      "safety_warnings_detected": "⚠️ Güvenlik Uyarıları:",
+      "code_execution_disabled": "⚠️ Kod çalıştırma devre dışı",
+      "no_suggestions_available": "⚠️ Öneri mevcut değil"
+    },
+    "success": {
+      "connection_successful": "✅ Bağlantı başarılı",
+      "code_executed_successfully": "✅ Kod başarıyla çalıştırıldı",
+      "file_saved": "✅ Dosya başarıyla kaydedildi",
+      "configuration_updated": "✅ Yapılandırma güncellendi",
+      "context_saved": "✅ Bağlam kaydedildi",
+      "context_loaded": "✅ Bağlam yüklendi",
+      "context_cleared": "✅ Tüm bağlam temizlendi",
+      "conversation_saved": "✅ Konuşma kaydedildi",
+      "conversation_cleared": "✅ Konuşma temizlendi"
+    },
+    "info": {
+      "ai_engine_ready": "✓ AI Motoru Hazır",
+      "ai_engine_initializing": "🔄 AI motoru başlatılıyor...",
+      "processing_request": "🔄 İstek işleniyor...",
+      "analyzing_context": "🔍 Blender bağlamı analiz ediliyor...",
+      "generating_response": "💭 Yanıt oluşturuluyor...",
+      "executing_code": "⚙️ Kod çalıştırılıyor...",
+      "debug_info_printed": "ℹ️ Hata ayıklama bilgisi konsola yazdırıldı"
+    },
+    "help": {
+      "get_api_key_openai": "API anahtarınızı buradan alın: https://platform.openai.com/api-keys",
+      "install_mcp_sdk": "Şununla yükleyin: pip install mcp",
+      "enable_in_preferences": "Tercihlerde Etkinleştir",
+      "configure_in_preferences": "Tercihlerde Yapılandır",
+      "check_configuration": "Yapılandırmayı kontrol et",
+      "backup_recommended": "Devam etmeden önce yedekleme önerilir"
+    }
+  },
+  "system_prompts": {
+    "base": {
+      "title": "S647 AI Asistanı",
+      "description": "Blender 3D yazılımı ve Python betik yazımında uzman AI asistanı",
+      "expertise": [
+        "Blender Python API (bpy) betik yazımı ve otomasyonu",
+        "3D modelleme, heykelcilik ve mesh işlemleri",
+        "Materyal oluşturma, shader düğümleri ve doku",
+        "Animasyon, rigging ve karakter kurulumu",
+        "Render motorları (Cycles, Eevee) ve optimizasyon"
+      ]
+    },
+    "modes": {
+      "chat": {
+        "title": "Sohbet Modu - Eğitim Odaklı",
+        "description": "Öğrenme ve anlama öncelikli",
+        "guidelines": [
+          "Örneklerle detaylı açıklamalar sağla",
+          "Gerektiğinde açıklayıcı sorular sor",
+          "Keşfetmeyi ve denemeyi teşvik et",
+          "Konuşkan, dostane bir ton kullan"
+        ]
+      },
+      "act": {
+        "title": "Eylem Modu - Aksiyon Odaklı",
+        "description": "Doğrudan eylem ve sonuçları öncelikli",
+        "guidelines": [
+          "Net, uygulanabilir adımlar sağla",
+          "Güvenlik için kritik olmadıkça açıklamaları minimize et",
+          "Emir kipi ve eylem fiilleri kullan",
+          "Verimlilik ve görev tamamlamaya odaklan"
+        ]
+      },
+      "hybrid": {
+        "title": "Hibrit Mod - Uyarlanabilir Yanıt",
+        "description": "Bağlama dayalı akıllı mod değiştirme",
+        "guidelines": [
+          "Yanıt stilini belirlemek için kullanıcı niyetini analiz et",
+          "Sorular ve öğrenme için eğitim yaklaşımı kullan",
+          "Görevler ve komutlar için eylem odaklı yaklaşım kullan",
+          "Kullanıcının görünen uzmanlığına göre detay seviyesini ayarla"
+        ]
+      }
+    }
+  },
+  "preferences": {
+    "provider": {
+      "openai": "OpenAI",
+      "custom": "Özel OpenAI-Uyumlu"
+    },
+    "models": {
+      "gpt-4o": "GPT-4o (En Son GPT-4 Optimize Edilmiş Model - Önerilen)",
+      "gpt-4o-mini": "GPT-4o Mini (Daha Hızlı, Uygun Maliyetli Model)",
+      "gpt-4-turbo": "GPT-4 Turbo (Önceki Nesil GPT-4)",
+      "gpt-3.5-turbo": "GPT-3.5 Turbo (Hızlı ve Ekonomik)"
+    },
+    "interaction_modes": {
+      "chat": "Sohbet Modu (Konuşma modunda başla)",
+      "act": "Eylem Modu (Aksiyon odaklı modda başla)",
+      "hybrid": "Hibrit Mod (Akıllı geçiş modunda başla)"
+    }
+  }
+}

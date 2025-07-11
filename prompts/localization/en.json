@@ -1,0 +1,202 @@
+{
+  "_meta": {
+    "name": "English",
+    "native_name": "English",
+    "version": "1.0.0",
+    "author": "S647 Development Team",
+    "completion": 100,
+    "description": "Default English language pack for S647"
+  },
+  "ui_texts": {
+    "panel_titles": {
+      "main_panel": "S647 AI Assistant",
+      "context_panel": "Context & Memory",
+      "suggestions_panel": "Smart Suggestions",
+      "advanced_panel": "Advanced Options",
+      "code_execution_panel": "Code Execution",
+      "mcp_panel": "MCP Integration"
+    },
+    "buttons": {
+      "send": {
+        "chat": "💬 Send",
+        "act": "⚡ Execute",
+        "hybrid": "🧠 Process",
+        "default": "Send"
+      },
+      "clear": "🗑️ Clear",
+      "save": "💾 Save",
+      "copy": "📋 Copy",
+      "execute": "▶ Apply",
+      "explain": "❓ Explain",
+      "modify": "✏️ Modify",
+      "suggestions": "🎯 Suggestions",
+      "context": "📎 Context",
+      "voice": "🎤 Voice",
+      "voice_soon": "🎤 Voice (Soon)",
+      "settings": "⚙️ Settings",
+      "test_connection": "Test Connection",
+      "reinitialize": "Reinitialize",
+      "debug": "Debug Info",
+      "refresh": "Refresh",
+      "toggle": "Toggle"
+    },
+    "placeholders": {
+      "input": {
+        "chat": "💬 Ask me anything about Blender...",
+        "act": "⚡ Tell me what to do in Blender...",
+        "hybrid": "🧠 Chat or command - I'll adapt...",
+        "default": "Type your message..."
+      },
+      "search": "🔍 Search...",
+      "filename": "Enter filename...",
+      "url": "Enter URL...",
+      "api_key": "Enter API key..."
+    },
+    "status": {
+      "thinking": "🤖 S647 is thinking...",
+      "responding": "🤖 S647 is responding...",
+      "error": "❌ Error occurred",
+      "ready": "✅ Ready",
+      "idle": "💤 Idle",
+      "busy": "⏳ AI is busy...",
+      "connected": "✓ Connected",
+      "disconnected": "✗ Not Connected",
+      "connecting": "⏳ Connecting..."
+    },
+    "mode_descriptions": {
+      "chat": "💬 Educational Focus - Learn and explore Blender",
+      "act": "⚡ Action Focus - Get things done quickly",
+      "hybrid": "🧠 Smart Mode Switching - Best of both worlds"
+    },
+    "welcome": {
+      "main": "👋 Welcome to S647!",
+      "chat": "💬 Ask me anything about Blender - I'm here to help you learn!",
+      "act": "⚡ Tell me what you want to do and I'll help you accomplish it!",
+      "hybrid": "🧠 Chat or command - I'll adapt to what you need!",
+      "quick_start": "Try: 'Create a cube' or 'How do I add materials?'"
+    },
+    "sections": {
+      "interaction_mode": "Interaction Mode",
+      "conversation": "💬 Conversation",
+      "message": "✍️ Message",
+      "quick_actions": "🚀 Quick Actions",
+      "context_settings": "Context Settings:",
+      "ai_configuration": "AI Configuration:",
+      "safety_settings": "Safety Settings:",
+      "api_status": "API Status:",
+      "statistics": "Statistics:"
+    }
+  },
+  "messages": {
+    "errors": {
+      "api_key_missing": "⚠️ Configure AI provider in preferences",
+      "api_key_invalid": "⚠️ Invalid API key format",
+      "ai_engine_not_ready": "⚠️ AI engine not ready",
+      "connection_failed": "❌ Failed to connect to AI service",
+      "request_failed": "❌ AI request failed",
+      "code_execution_blocked": "🚫 Code execution blocked due to safety concerns",
+      "code_execution_failed": "❌ Code execution failed",
+      "file_not_found": "❌ File not found: {filename}",
+      "invalid_configuration": "❌ Invalid configuration",
+      "unknown_error": "❌ An unknown error occurred"
+    },
+    "warnings": {
+      "api_key_missing_openai": "⚠️ API key required for S647 to function",
+      "custom_provider_incomplete": "⚠️ All custom provider fields are required",
+      "automatic_execution_dangerous": "⚠️ Automatic code execution can be dangerous!",
+      "safety_warnings_detected": "⚠️ Safety Warnings:",
+      "code_execution_disabled": "⚠️ Code execution disabled",
+      "no_suggestions_available": "⚠️ No suggestions available"
+    },
+    "success": {
+      "connection_successful": "✅ Connection successful",
+      "code_executed_successfully": "✅ Code executed successfully",
+      "file_saved": "✅ File saved successfully",
+      "configuration_updated": "✅ Configuration updated",
+      "context_saved": "✅ Context saved",
+      "context_loaded": "✅ Context loaded",
+      "context_cleared": "✅ All context cleared",
+      "conversation_saved": "✅ Conversation saved",
+      "conversation_cleared": "✅ Conversation cleared"
+    },
+    "info": {
+      "ai_engine_ready": "✓ AI Engine Ready",
+      "ai_engine_initializing": "🔄 Initializing AI engine...",
+      "processing_request": "🔄 Processing request...",
+      "analyzing_context": "🔍 Analyzing Blender context...",
+      "generating_response": "💭 Generating response...",
+      "executing_code": "⚙️ Executing code...",
+      "debug_info_printed": "ℹ️ Debug info printed to console"
+    },
+    "help": {
+      "get_api_key_openai": "Get your API key from: https://platform.openai.com/api-keys",
+      "install_mcp_sdk": "Install with: pip install mcp",
+      "enable_in_preferences": "Enable in Preferences",
+      "configure_in_preferences": "Configure in Preferences",
+      "check_configuration": "Check configuration",
+      "backup_recommended": "Backup recommended before proceeding"
+    }
+  },
+  "system_prompts": {
+    "base": {
+      "title": "S647 AI Assistant",
+      "description": "Expert AI assistant specialized in Blender 3D software and Python scripting",
+      "expertise": [
+        "Blender Python API (bpy) scripting and automation",
+        "3D modeling, sculpting, and mesh operations",
+        "Material creation, shader nodes, and texturing",
+        "Animation, rigging, and character setup",
+        "Rendering engines (Cycles, Eevee) and optimization"
+      ]
+    },
+    "modes": {
+      "chat": {
+        "title": "Chat Mode - Educational Focus",
+        "description": "Prioritize learning and understanding",
+        "guidelines": [
+          "Provide detailed explanations with examples",
+          "Ask clarifying questions when needed",
+          "Encourage exploration and experimentation",
+          "Use conversational, friendly tone"
+        ]
+      },
+      "act": {
+        "title": "Act Mode - Action Focus",
+        "description": "Prioritize direct action and results",
+        "guidelines": [
+          "Provide clear, executable steps",
+          "Minimize explanations unless critical for safety",
+          "Use imperative language and action verbs",
+          "Focus on efficiency and task completion"
+        ]
+      },
+      "hybrid": {
+        "title": "Hybrid Mode - Adaptive Response",
+        "description": "Intelligent mode switching based on context",
+        "guidelines": [
+          "Analyze user intent to determine response style",
+          "Use educational approach for questions and learning",
+          "Use action-oriented approach for tasks and commands",
+          "Adapt detail level based on user's apparent expertise"
+        ]
+      }
+    }
+  },
+  "preferences": {
+    "provider": {
+      "openai": "OpenAI",
+      "custom": "Custom OpenAI-Compatible"
+    },
+    "models": {
+      "gpt-4o": "GPT-4o (Latest GPT-4 Optimized model - Recommended)",
+      "gpt-4o-mini": "GPT-4o Mini (Faster, cost-effective model)",
+      "gpt-4-turbo": "GPT-4 Turbo (Previous generation GPT-4)",
+      "gpt-3.5-turbo": "GPT-3.5 Turbo (Fast and economical)"
+    },
+    "interaction_modes": {
+      "chat": "Chat Mode (Start in conversational mode)",
+      "act": "Act Mode (Start in action-oriented mode)",
+      "hybrid": "Hybrid Mode (Start in intelligent switching mode)"
+    }
+  }
+}

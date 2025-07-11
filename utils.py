@@ -20,8 +20,17 @@ Common utility functions for the S647 addon including Blender context
 extraction, code parsing, and helper functions.
 """
 
-import bpy
-import bmesh
+try:
+    import bpy
+except ImportError:
+    # Mock bpy for testing outside Blender
+    bpy = None
+
+try:
+    import bmesh
+except ImportError:
+    bmesh = None
+
 import json
 import re
 from typing import Dict, List, Any, Optional, Tuple
@@ -29,56 +38,127 @@ from typing import Dict, List, Any, Optional, Tuple
 def get_blender_context_info(context_mode: str = 'standard') -> Dict[str, Any]:
     """
     Extract Blender context information for AI processing
-    
+
     Args:
         context_mode: Level of detail ('minimal', 'standard', 'detailed', 'full')
-    
+
     Returns:
         Dictionary containing context information
     """
     import datetime
 
-    context_info = {
-        "blender_version": bpy.app.version_string,
-        "scene_name": bpy.context.scene.name,
-        "mode": bpy.context.mode,
-        "timestamp": datetime.datetime.now().strftime("%H:%M:%S"),
-    }
-    
-    if context_mode == 'minimal':
-        return context_info
-    
-    # Standard context
-    scene = bpy.context.scene
-    context_info.update({
-        "active_object": get_object_info(bpy.context.active_object) if bpy.context.active_object else None,
-        "selected_objects": [obj.name for obj in bpy.context.selected_objects],
-        "total_objects": len(scene.objects),
-        "current_frame": scene.frame_current,
-        "frame_range": [scene.frame_start, scene.frame_end],
-    })
+    try:
+        # Check if bpy is available (in Blender environment)
+        if bpy is None:
+            return {
+                "blender_version": "Not in Blender",
+                "scene_name": "Unknown",
+                "mode": "UNKNOWN",
+                "timestamp": datetime.datetime.now().strftime("%H:%M:%S"),
+            }
+
+        context_info = {
+            "blender_version": bpy.app.version_string,
+            "scene_name": bpy.context.scene.name if bpy.context.scene else "Unknown",
+            "mode": getattr(bpy.context, 'mode', 'UNKNOWN'),
+            "timestamp": datetime.datetime.now().strftime("%H:%M:%S"),
+        }
+
+        if context_mode == 'minimal':
+            return context_info
+
+        # Standard context with safe attribute access
+        scene = bpy.context.scene
+
+        # Safely get active object
+        active_object = getattr(bpy.context, 'active_object', None)
+
+        # Safely get selected objects
+        selected_objects = getattr(bpy.context, 'selected_objects', [])
+
+        context_info.update({
+            "active_object": get_object_info(active_object) if active_object else None,
+            "selected_objects": [obj.name for obj in selected_objects] if selected_objects else [],
+            "total_objects": len(scene.objects) if scene else 0,
+            "current_frame": scene.frame_current if scene else 1,
+            "frame_range": [scene.frame_start, scene.frame_end] if scene else [1, 250],
+        })
+    except Exception as e:
+        print(f"S647: Error getting basic context: {e}")
+        # Return minimal safe context
+        return {
+            "blender_version": bpy.app.version_string,
+            "scene_name": "Error",
+            "mode": "UNKNOWN",
+            "timestamp": datetime.datetime.now().strftime("%H:%M:%S"),
+            "active_object": None,
+            "selected_objects": [],
+            "total_objects": 0,
+            "current_frame": 1,
+            "frame_range": [1, 250],
+            "error": str(e)
+        }
     
     if context_mode in ['detailed', 'full']:
-        # Detailed context
-        context_info.update({
-            "scene_objects": [get_object_info(obj, detailed=True) for obj in scene.objects],
-            "collections": [col.name for col in scene.collection.children],
-            "render_engine": scene.render.engine,
-            "world_settings": get_world_info(scene.world) if scene.world else None,
-        })
-    
+        # Detailed context with safe access
+        try:
+            detailed_info = {}
+
+            if scene and hasattr(scene, 'objects'):
+                detailed_info["scene_objects"] = [get_object_info(obj, detailed=True) for obj in scene.objects]
+            else:
+                detailed_info["scene_objects"] = []
+
+            if scene and hasattr(scene, 'collection') and scene.collection:
+                detailed_info["collections"] = [col.name for col in scene.collection.children]
+            else:
+                detailed_info["collections"] = []
+
+            if scene and hasattr(scene, 'render'):
+                detailed_info["render_engine"] = scene.render.engine
+            else:
+                detailed_info["render_engine"] = "Unknown"
+
+            if scene and hasattr(scene, 'world') and scene.world:
+                detailed_info["world_settings"] = get_world_info(scene.world)
+            else:
+                detailed_info["world_settings"] = None
+
+            context_info.update(detailed_info)
+        except Exception as e:
+            print(f"S647: Error getting detailed context: {e}")
+            context_info["detailed_context_error"] = str(e)
+
     if context_mode == 'full':
-        # Full context (can be heavy)
-        context_info.update({
-            "materials": [get_material_info(mat) for mat in bpy.data.materials],
-            "textures": [tex.name for tex in bpy.data.textures],
-            "cameras": [get_object_info(obj) for obj in scene.objects if obj.type == 'CAMERA'],
-            "lights": [get_object_info(obj) for obj in scene.objects if obj.type == 'LIGHT'],
-        })
-    
+        # Full context (can be heavy) with safe access
+        try:
+            full_info = {}
+
+            if hasattr(bpy.data, 'materials'):
+                full_info["materials"] = [get_material_info(mat) for mat in bpy.data.materials]
+            else:
+                full_info["materials"] = []
+
+            if hasattr(bpy.data, 'textures'):
+                full_info["textures"] = [tex.name for tex in bpy.data.textures]
+            else:
+                full_info["textures"] = []
+
+            if scene and hasattr(scene, 'objects'):
+                full_info["cameras"] = [get_object_info(obj) for obj in scene.objects if obj.type == 'CAMERA']
+                full_info["lights"] = [get_object_info(obj) for obj in scene.objects if obj.type == 'LIGHT']
+            else:
+                full_info["cameras"] = []
+                full_info["lights"] = []
+
+            context_info.update(full_info)
+        except Exception as e:
+            print(f"S647: Error getting full context: {e}")
+            context_info["full_context_error"] = str(e)
+
     return context_info
 
-def get_object_info(obj: bpy.types.Object, detailed: bool = False) -> Optional[Dict[str, Any]]:
+def get_object_info(obj, detailed: bool = False) -> Optional[Dict[str, Any]]:
     """Get information about a Blender object"""
     if not obj:
         return None
@@ -114,7 +194,7 @@ def get_object_info(obj: bpy.types.Object, detailed: bool = False) -> Optional[D
     
     return info
 
-def get_material_info(material: bpy.types.Material) -> Dict[str, Any]:
+def get_material_info(material) -> Dict[str, Any]:
     """Get information about a material"""
     return {
         "name": material.name,
@@ -124,7 +204,7 @@ def get_material_info(material: bpy.types.Material) -> Dict[str, Any]:
         "roughness": getattr(material, 'roughness', None),
     }
 
-def get_world_info(world: bpy.types.World) -> Dict[str, Any]:
+def get_world_info(world) -> Dict[str, Any]:
     """Get information about world settings"""
     return {
         "name": world.name,
@@ -179,47 +259,32 @@ def validate_python_code(code: str) -> Tuple[bool, Optional[str]]:
 
 def is_safe_code(code: str) -> Tuple[bool, List[str]]:
     """
-    Enhanced safety check for code execution
+    Simplified safety check for code execution (Blender MCP style)
 
     Returns:
         Tuple of (is_safe, list_of_warnings)
     """
-    try:
-        # Use the enhanced code executor analysis
-        from . import code_executor
-        analysis = code_executor.analyze_code_safety(code, strict_mode=True)
+    warnings = []
 
-        warnings = []
-        for warning in analysis['warnings']:
-            warnings.append(warning['description'])
+    # Simple check for truly dangerous operations
+    dangerous_operations = [
+        ('os.system', "System command execution"),
+        ('subprocess.call', "Subprocess execution"),
+        ('subprocess.run', "Subprocess execution"),
+        ('subprocess.Popen', "Process creation"),
+        ('os.remove', "File deletion"),
+        ('os.unlink', "File deletion"),
+        ('os.rmdir', "Directory deletion"),
+        ('shutil.rmtree', "Recursive directory deletion"),
+        ('bpy.ops.wm.quit', "Blender quit operation"),
+    ]
 
-        for error in analysis['errors']:
-            warnings.append(f"CRITICAL: {error['description']}")
+    for operation, warning in dangerous_operations:
+        if operation in code:
+            warnings.append(f"BLOCKED: {warning} ({operation})")
 
-        return analysis['is_safe'], warnings
-
-    except ImportError:
-        # Fallback to basic check if code_executor not available
-        warnings = []
-        dangerous_patterns = [
-            (r'\bos\b', "Uses 'os' module - file system access"),
-            (r'\bsubprocess\b', "Uses 'subprocess' - system command execution"),
-            (r'\beval\b', "Uses 'eval' - arbitrary code execution"),
-            (r'\bexec\b', "Uses 'exec' - arbitrary code execution"),
-            (r'\b__import__\b', "Uses '__import__' - dynamic imports"),
-            (r'\bopen\s*\(', "File operations detected"),
-            (r'\bfile\s*\(', "File operations detected"),
-            (r'\bdelete\b', "Potential destructive operation"),
-            (r'\bremove\b', "Potential destructive operation"),
-            (r'\bclear\b', "Potential destructive operation"),
-        ]
-
-        for pattern, warning in dangerous_patterns:
-            if re.search(pattern, code, re.IGNORECASE):
-                warnings.append(warning)
-
-        is_safe = len(warnings) == 0
-        return is_safe, warnings
+    is_safe = len(warnings) == 0
+    return is_safe, warnings
 
 def format_code_for_display(code: str, max_lines: int = 20) -> str:
     """Format code for display in UI"""
@@ -236,7 +301,29 @@ def format_code_for_display(code: str, max_lines: int = 20) -> str:
     return truncated
 
 def create_system_prompt(interaction_mode: str = 'chat') -> str:
-    """Create system prompt for AI with Blender context"""
+    """
+    Create system prompt for AI with Blender context using centralized prompt system
+
+    DEPRECATED: This function is deprecated. Use PromptManager.get_system_prompt() directly.
+    """
+    import warnings
+    warnings.warn(
+        "create_system_prompt() is deprecated. Use PromptManager.get_system_prompt() instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+
+    try:
+        from .prompts import PromptManager
+        return PromptManager.get_system_prompt(mode=interaction_mode)
+    except ImportError:
+        # Fallback to legacy prompt if centralized system not available
+        print("S647: Warning - Centralized prompt system not available, using legacy fallback")
+        return _create_legacy_system_prompt(interaction_mode)
+
+
+def _create_legacy_system_prompt(interaction_mode: str = 'chat') -> str:
+    """Legacy system prompt creation (fallback)"""
     base_prompt = """You are S647, an expert AI assistant specialized in Blender 3D software and Python scripting. You provide professional-grade assistance with:
 
 🎯 CORE EXPERTISE:

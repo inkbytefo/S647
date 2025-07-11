@@ -176,36 +176,12 @@ class S647_OT_ExecuteCode(Operator):
             self.report({'ERROR'}, f"Invalid Python code: {error_msg}")
             return {'CANCELLED'}
 
-        # Comprehensive safety analysis
+        # Simple execution with minimal safety checks (Blender MCP style)
         try:
             from . import code_executor
-            safety_analysis = code_executor.analyze_code_safety(code, strict_mode=prefs.sandbox_mode)
 
-            # Check if code is safe to execute
-            if not safety_analysis['is_safe']:
-                if prefs.confirm_before_execution:
-                    # Show detailed safety report
-                    error_msg = f"Code execution blocked - Risk Level: {safety_analysis['risk_level'].upper()}\n"
-
-                    if safety_analysis['errors']:
-                        error_msg += f"Critical Issues: {len(safety_analysis['errors'])}\n"
-
-                    if safety_analysis['warnings']:
-                        error_msg += f"Warnings: {len(safety_analysis['warnings'])}\n"
-
-                    self.report({'ERROR'}, error_msg)
-                    return {'CANCELLED'}
-                else:
-                    # Log warnings but continue
-                    warning_count = len(safety_analysis['warnings'])
-                    self.report({'WARNING'}, f"Code has {warning_count} safety warnings but will execute")
-
-            # Execute code with enhanced safety
-            result = code_executor.execute_code(
-                code,
-                sandbox=prefs.sandbox_mode,
-                strict_mode=prefs.sandbox_mode
-            )
+            # Execute code directly with simplified approach
+            result = code_executor.execute_code(code)
 
             # Update properties
             props.code_execution_result = result
@@ -928,58 +904,49 @@ class S647_OT_AnalyzeCode(Operator):
         try:
             from . import code_executor
 
-            # Perform comprehensive analysis
-            analysis = code_executor.analyze_code_safety(code, strict_mode=prefs.sandbox_mode)
+            # Simple safety check using new system
+            dangerous_operations = [
+                'os.system', 'subprocess.call', 'subprocess.run', 'subprocess.Popen',
+                'os.remove', 'os.unlink', 'os.rmdir', 'shutil.rmtree',
+                'bpy.ops.wm.quit'
+            ]
 
-            # Create detailed report
+            # Check for dangerous operations
+            found_dangerous = []
+            for dangerous_op in dangerous_operations:
+                if dangerous_op in code:
+                    found_dangerous.append(dangerous_op)
+
+            # Create simplified report
             report_lines = []
-            report_lines.append(f"Code Analysis Report")
-            report_lines.append(f"Risk Level: {analysis['risk_level'].upper()}")
-            report_lines.append(f"Safe to Execute: {'Yes' if analysis['is_safe'] else 'No'}")
+            report_lines.append("Code Analysis Report (Simplified)")
+            report_lines.append("=" * 40)
+
+            if found_dangerous:
+                report_lines.append("⚠️ DANGEROUS OPERATIONS DETECTED:")
+                for op in found_dangerous:
+                    report_lines.append(f"  - {op}")
+                report_lines.append("")
+                report_lines.append("❌ Code execution would be BLOCKED")
+                is_safe = False
+            else:
+                report_lines.append("✅ No dangerous operations detected")
+                report_lines.append("✅ Code is safe to execute")
+                is_safe = True
+
             report_lines.append("")
-
-            if analysis['errors']:
-                report_lines.append(f"Critical Issues ({len(analysis['errors'])}):")
-                for error in analysis['errors']:
-                    report_lines.append(f"  Line {error['line']}: {error['description']}")
-                report_lines.append("")
-
-            if analysis['warnings']:
-                report_lines.append(f"Warnings ({len(analysis['warnings'])}):")
-                for warning in analysis['warnings'][:10]:  # Limit to 10
-                    report_lines.append(f"  Line {warning['line']}: {warning['description']}")
-                if len(analysis['warnings']) > 10:
-                    remaining = len(analysis['warnings']) - 10
-                    report_lines.append(f"  ... and {remaining} more warnings")
-                report_lines.append("")
-
-            if analysis['blender_operations']:
-                report_lines.append(f"Blender Operations ({len(analysis['blender_operations'])}):")
-                for op in analysis['blender_operations'][:10]:
-                    severity_icon = {"low": "✓", "medium": "⚠", "high": "⚠", "critical": "✗"}
-                    icon = severity_icon.get(op['severity'], "•")
-                    report_lines.append(f"  {icon} Line {op['line']}: {op['description']}")
-                report_lines.append("")
-
-            if analysis['recommendations']:
-                report_lines.append("Recommendations:")
-                for rec in analysis['recommendations']:
-                    report_lines.append(f"  • {rec}")
-                report_lines.append("")
+            report_lines.append("Note: Using simplified safety system (Blender MCP style)")
+            report_lines.append("Only truly dangerous operations are blocked.")
 
             # Store analysis result
             analysis_report = "\n".join(report_lines)
             props.code_execution_result = analysis_report
 
             # Report summary
-            if analysis['errors']:
-                self.report({'ERROR'}, f"Analysis found {len(analysis['errors'])} critical issues")
-            elif analysis['risk_level'] == 'high':
-                self.report({'WARNING'}, f"High risk code - {len(analysis['warnings'])} warnings")
-            elif analysis['warnings']:
-                self.report({'INFO'}, f"Analysis complete - {len(analysis['warnings'])} warnings")
+            if found_dangerous:
+                self.report({'ERROR'}, f"Analysis found {len(found_dangerous)} dangerous operations")
             else:
-                self.report({'INFO'}, "Code analysis complete - no issues found")
+                self.report({'INFO'}, "Code analysis complete - safe to execute")
 
         except Exception as e:
             self.report({'ERROR'}, f"Code analysis failed: {str(e)}")
@@ -991,7 +958,7 @@ class S647_OT_SwitchMode(Operator):
     """Switch interaction mode"""
     bl_idname = "s647.switch_mode"
     bl_label = "Switch Mode"
-    bl_description = "Switch between Chat, Act, and Hybrid modes"
+    bl_description = "Switch between Chat and Act modes"
     bl_options = {'REGISTER'}
 
     mode: StringProperty(
@@ -1002,6 +969,12 @@ class S647_OT_SwitchMode(Operator):
 
     def execute(self, context):
         props = context.scene.s647
+
+        # Validate mode
+        if self.mode not in ['chat', 'act']:
+            self.report({'ERROR'}, f"Invalid mode: {self.mode}")
+            return {'CANCELLED'}
+
         props.interaction_mode = self.mode
 
         # Clear current task if switching away from Act mode
@@ -1021,9 +994,62 @@ class S647_OT_ShowFullHistory(Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        # This could open a popup or expand the chat view
-        self.report({'INFO'}, "Full history feature coming soon")
-        return {'FINISHED'}
+        return context.window_manager.invoke_props_dialog(self, width=800)
+
+    def draw(self, context):
+        layout = self.layout
+        props = context.scene.s647
+
+        # Title
+        layout.label(text="Complete Conversation History", icon='OUTLINER')
+        layout.separator()
+
+        # Scrollable area for messages
+        box = layout.box()
+        col = box.column()
+
+        for i, msg in enumerate(props.conversation_history):
+            # Message header
+            row = col.row()
+            if msg.role == 'user':
+                row.label(text=f"💬 You ({msg.timestamp})", icon='USER')
+            else:
+                row.label(text=f"🤖 S647 ({msg.timestamp})", icon='BLENDER')
+
+            # Message content with better formatting
+            content_box = col.box()
+            content_lines = msg.content.split('\n')
+
+            for line in content_lines:
+                if line.strip():
+                    # Split long lines for better readability
+                    if len(line) > 100:
+                        words = line.split(' ')
+                        current_line = ""
+                        for word in words:
+                            if len(current_line + word) > 100 and current_line:
+                                content_box.label(text=current_line.strip())
+                                current_line = word + " "
+                            else:
+                                current_line += word + " "
+                        if current_line.strip():
+                            content_box.label(text=current_line.strip())
+                    else:
+                        content_box.label(text=line)
+                else:
+                    # Add small separator for empty lines
+                    content_box.separator(factor=0.3)
+
+            # Code execution button if applicable
+            if msg.has_code and not msg.code_executed:
+                code_row = content_box.row()
+                code_op = code_row.operator("s647.apply_message_code", text="Execute Code", icon='PLAY')
+                code_op.message_index = i
+
+            col.separator()
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=600)
 
 class S647_OT_ExpandMessage(Operator):
     """Expand a truncated message"""
@@ -1039,9 +1065,68 @@ class S647_OT_ExpandMessage(Operator):
     )
 
     def execute(self, context):
-        # This could show the full message in a popup
-        self.report({'INFO'}, "Message expansion feature coming soon")
-        return {'FINISHED'}
+        return context.window_manager.invoke_props_dialog(self, width=800)
+
+    def draw(self, context):
+        layout = self.layout
+        props = context.scene.s647
+
+        if self.message_index < len(props.conversation_history):
+            message = props.conversation_history[self.message_index]
+
+            # Message header
+            layout.label(text=f"Full Message from {message.role.title()}", icon='TEXT')
+            if message.timestamp:
+                layout.label(text=f"Time: {message.timestamp}")
+            layout.separator()
+
+            # Full message content in a scrollable area
+            content_lines = message.content.split('\n')
+
+            # Create a column for better content organization
+            col = layout.column()
+            col.scale_y = 0.9
+
+            # Show content with proper text wrapping
+            for i, line in enumerate(content_lines):
+                # Create a box for each paragraph (group of non-empty lines)
+                if line.strip():
+                    # Split long lines for better readability
+                    if len(line) > 80:
+                        # Split line into chunks of 80 characters at word boundaries
+                        words = line.split(' ')
+                        current_line = ""
+                        for word in words:
+                            if len(current_line + word) > 80 and current_line:
+                                row = col.row()
+                                row.scale_y = 0.8
+                                row.label(text=current_line.strip())
+                                current_line = word + " "
+                            else:
+                                current_line += word + " "
+                        if current_line.strip():
+                            row = col.row()
+                            row.scale_y = 0.8
+                            row.label(text=current_line.strip())
+                    else:
+                        row = col.row()
+                        row.scale_y = 0.8
+                        row.label(text=line)
+                else:
+                    # Add small separator for empty lines
+                    if i > 0 and i < len(content_lines) - 1:
+                        col.separator(factor=0.5)
+
+            # Code execution button if applicable
+            if message.has_code and not message.code_executed:
+                layout.separator()
+                code_op = layout.operator("s647.apply_message_code", text="Execute Code", icon='PLAY')
+                code_op.message_index = self.message_index
+        else:
+            layout.label(text="Message not found", icon='ERROR')
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self, width=500)
 
 class S647_OT_ApplyMessageCode(Operator):
     """Apply code from a specific message"""
@@ -1067,12 +1152,20 @@ class S647_OT_ApplyMessageCode(Operator):
                 code_blocks = utils.extract_python_code(message.content)
 
                 if code_blocks:
-                    # Execute the first code block
+                    # Execute the first code block using safe executor
                     code, _, _ = code_blocks[0]
                     try:
-                        exec(code)
-                        message.code_executed = True
-                        self.report({'INFO'}, "Code executed successfully")
+                        from . import code_executor
+                        result = code_executor.execute_code(code)
+
+                        # Check if execution was successful
+                        if "Code execution blocked" in result:
+                            self.report({'ERROR'}, result)
+                        elif "Code execution error" in result:
+                            self.report({'ERROR'}, result)
+                        else:
+                            message.code_executed = True
+                            self.report({'INFO'}, "Code executed successfully")
                     except Exception as e:
                         self.report({'ERROR'}, f"Code execution failed: {str(e)}")
                 else:
@@ -1759,10 +1852,59 @@ class S647_OT_ReinitializeAI(Operator):
 
         return {'FINISHED'}
 
+class S647_OT_TestMCPIntegration(Operator):
+    """Test MCP Integration"""
+    bl_idname = "s647.test_mcp_integration"
+    bl_label = "Test MCP Integration"
+    bl_description = "Run comprehensive tests for MCP integration"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        try:
+            # Import and run the test module
+            import test_mcp_integration
+
+            # Capture test output
+            import io
+            import sys
+
+            # Redirect stdout to capture test output
+            old_stdout = sys.stdout
+            sys.stdout = captured_output = io.StringIO()
+
+            try:
+                # Run all tests
+                success = test_mcp_integration.run_all_tests()
+
+                # Get the output
+                test_output = captured_output.getvalue()
+
+            finally:
+                # Restore stdout
+                sys.stdout = old_stdout
+
+            # Print results to Blender console
+            print("S647 MCP Integration Test Results:")
+            print("-" * 50)
+            print(test_output)
+
+            if success:
+                self.report({'INFO'}, "MCP Integration tests passed! Check console for details.")
+            else:
+                self.report({'WARNING'}, "Some MCP Integration tests failed. Check console for details.")
+
+        except Exception as e:
+            error_msg = f"MCP Integration test failed: {str(e)}"
+            print(f"S647 Error: {error_msg}")
+            self.report({'ERROR'}, error_msg)
+
+        return {'FINISHED'}
+
 # Add new operators to the classes list
 classes.extend([
     S647_OT_TestAIConfig,
     S647_OT_ReinitializeAI,
+    S647_OT_TestMCPIntegration,
 ])
 
 def register():

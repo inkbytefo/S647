@@ -34,6 +34,42 @@ class S647_PT_UnifiedChatPanel(Panel):
     bl_category = "S647"
     bl_context = "objectmode"
 
+    def _get_ui_text(self, key: str, mode: str = None, **kwargs) -> str:
+        """Get UI text using centralized prompt system with fallback"""
+        try:
+            from .prompts import PromptManager
+            return PromptManager.get_ui_text(key, mode=mode, **kwargs)
+        except (ImportError, Exception):
+            # Comprehensive fallback texts
+            fallback_texts = {
+                'interaction_mode': "Interaction Mode",
+                'send': {'chat': "💬 Chat", 'act': "⚡ Act"},
+                'mode_description_chat': "💬 Educational Focus - Learn and explore Blender",
+                'mode_description_act': "⚡ Action Focus - Get things done quickly",
+                'conversation': "💬 Conversation",
+                'welcome_main': "👋 Welcome to S647!",
+                'welcome_chat': "💬 Ask me anything about Blender - I'm here to help you learn!",
+                'welcome_act': "⚡ Tell me what you want to do and I'll help you accomplish it!",
+                'quick_start': "Try: 'Create a cube' or 'How do I add materials?'",
+                'message_header': "✍️ Message",
+                'placeholder_chat': "💬 Ask me anything about Blender...",
+                'placeholder_act': "⚡ Tell me what to do in Blender...",
+                'character_count': "📝 {count} characters",
+                'quick_actions': "🚀 Quick Actions",
+                'suggestions': "🎯 Suggestions",
+                'context': "📎 Context",
+                'voice': "🎤 Voice",
+                'voice_soon': "🎤 Voice (Soon)",
+                'settings': "⚙️ Settings",
+                'clear': "🗑️ Clear",
+                'save': "💾 Save",
+                'message_count': "💬 {count} messages in conversation"
+            }
+
+            if mode and key in fallback_texts and isinstance(fallback_texts[key], dict):
+                return fallback_texts[key].get(mode, f"[{key}]")
+            return fallback_texts.get(key, f"[{key}]")
+
     def draw(self, context):
         layout = self.layout
         props = context.scene.s647
@@ -88,14 +124,14 @@ class S647_PT_UnifiedChatPanel(Panel):
         # Add subtle header
         header_row = pills_container.row()
         header_row.scale_y = 0.7
-        header_row.label(text="Interaction Mode", icon='SETTINGS')
+        header_row.label(text=self._get_ui_text("interaction_mode"), icon='SETTINGS')
 
         pills_row = pills_container.row(align=True)
         pills_row.scale_y = 1.1  # Slightly larger for better touch targets
 
         # Chat mode pill with enhanced styling
         chat_op = pills_row.operator("s647.switch_mode",
-                                   text="💬 Chat",
+                                   text=self._get_ui_text("send", mode="chat"),
                                    depress=(props.interaction_mode == 'chat'))
         chat_op.mode = 'chat'
         if props.interaction_mode == 'chat':
@@ -104,27 +140,15 @@ class S647_PT_UnifiedChatPanel(Panel):
 
         # Act mode pill
         act_op = pills_row.operator("s647.switch_mode",
-                                  text="⚡ Act",
+                                  text=self._get_ui_text("send", mode="act"),
                                   depress=(props.interaction_mode == 'act'))
         act_op.mode = 'act'
-
-        # Hybrid mode pill
-        hybrid_op = pills_row.operator("s647.switch_mode",
-                                     text="🧠 Hybrid",
-                                     depress=(props.interaction_mode == 'hybrid'))
-        hybrid_op.mode = 'hybrid'
 
         # Mode description with smooth transition effect
         desc_row = pills_container.row()
         desc_row.scale_y = 0.8
 
-        mode_descriptions = {
-            'chat': "💬 Conversational & Educational - Perfect for learning",
-            'act': "⚡ Task-Focused & Direct - Get things done efficiently",
-            'hybrid': "🧠 Smart Mode Switching - Best of both worlds"
-        }
-
-        current_desc = mode_descriptions.get(props.interaction_mode, "")
+        current_desc = self._get_ui_text(f"mode_description_{props.interaction_mode}")
         if current_desc:
             desc_row.label(text=current_desc)
 
@@ -154,7 +178,7 @@ class S647_PT_UnifiedChatPanel(Panel):
         # Chat header
         header_row = chat_box.row()
         header_row.scale_y = 0.8
-        header_row.label(text="💬 Conversation", icon='OUTLINER')
+        header_row.label(text=self._get_ui_text("conversation"), icon='OUTLINER')
 
         if not props.conversation_history:
             # Enhanced welcome message with better visual hierarchy
@@ -164,34 +188,48 @@ class S647_PT_UnifiedChatPanel(Panel):
             # Main welcome
             welcome_row = welcome_container.row()
             welcome_row.scale_y = 1.2
-            welcome_row.label(text="👋 Welcome to S647!", icon='BLENDER')
+            welcome_row.label(text=self._get_ui_text("main"), icon='BLENDER')
 
             # Mode-specific tips with better formatting
-            mode_tips = {
-                'chat': "💬 Ask me anything about Blender - I'm here to help you learn!",
-                'act': "⚡ Tell me what you want to do and I'll help you accomplish it!",
-                'hybrid': "🧠 Chat or command - I'll adapt to what you need!"
-            }
-
             tip_row = welcome_container.row()
             tip_row.scale_y = 0.9
-            tip_row.label(text=mode_tips.get(props.interaction_mode, ""))
+            tip_text = self._get_ui_text(props.interaction_mode)
+            tip_row.label(text=tip_text)
 
             # Quick start suggestions
             suggestions_row = welcome_container.row()
             suggestions_row.scale_y = 0.8
-            suggestions_row.label(text="Try: 'Create a cube' or 'How do I add materials?'")
+            suggestions_row.label(text=self._get_ui_text("quick_start"))
             return
 
         # Message stream with improved spacing
         messages_container = chat_box.box()
         messages_container.use_property_split = False
 
-        # Show recent messages (last 8 for better UX)
-        recent_messages = list(props.conversation_history)[-8:]
+        # Auto-scroll behavior: Show more recent messages as conversation grows
+        total_messages = len(props.conversation_history)
+
+        # Dynamic message display count based on conversation length
+        if total_messages <= 5:
+            # Show all messages for short conversations
+            recent_messages = list(props.conversation_history)
+            show_more_indicator = False
+        elif total_messages <= 15:
+            # Show last 8 messages for medium conversations
+            recent_messages = list(props.conversation_history)[-8:]
+            show_more_indicator = total_messages > 8
+        else:
+            # Show last 10 messages for long conversations (better scroll feel)
+            recent_messages = list(props.conversation_history)[-10:]
+            show_more_indicator = True
 
         for i, msg in enumerate(recent_messages):
-            self.draw_message_bubble(messages_container, msg, props, i == len(recent_messages) - 1)
+            # Calculate actual message index in full conversation
+            actual_index = total_messages - len(recent_messages) + i
+            is_latest = i == len(recent_messages) - 1
+            is_recent = i >= len(recent_messages) - 3  # Last 3 messages are "recent"
+
+            self.draw_message_bubble(messages_container, msg, props, is_latest, actual_index, is_recent)
 
             # Add subtle separator between messages
             if i < len(recent_messages) - 1:
@@ -199,19 +237,28 @@ class S647_PT_UnifiedChatPanel(Panel):
                 sep_row.scale_y = 0.3
                 sep_row.separator()
 
-        # Show more indicator with better styling
-        if len(props.conversation_history) > 8:
+        # Show more indicator with better styling and scroll info
+        if show_more_indicator:
             more_container = chat_box.box()
             more_row = more_container.row()
             more_row.scale_y = 0.8
-            more_row.label(text=f"... and {len(props.conversation_history) - 8} more messages")
+            hidden_count = total_messages - len(recent_messages)
+            more_row.label(text=f"↑ {hidden_count} earlier messages", icon='TRIA_UP')
             more_row.operator("s647.show_full_history", text="Show All", icon='TRIA_DOWN')
 
-    def draw_message_bubble(self, chat_box, msg, props, is_latest):
-        """Draw individual message bubble with modern chat-like styling"""
+    def draw_message_bubble(self, chat_box, msg, props, is_latest, message_index, is_recent=True):
+        """Draw individual message bubble with modern chat-like styling and auto-scroll effect"""
         # Create message container with enhanced styling
         msg_container = chat_box.box()
         msg_container.use_property_split = False
+
+        # Apply scaling for auto-scroll effect - older messages get smaller
+        if not is_recent:
+            msg_container.scale_y = 0.7  # Make older messages more compact
+        elif is_latest:
+            msg_container.scale_y = 1.1  # Emphasize the latest message
+        else:
+            msg_container.scale_y = 0.9  # Recent but not latest
 
         # Message header with improved layout
         header_row = msg_container.row()
@@ -219,7 +266,10 @@ class S647_PT_UnifiedChatPanel(Panel):
 
         if msg.role == 'user':
             # User message with right-aligned feel
-            header_row.label(text="💬 You", icon='USER')
+            user_text = "💬 You"
+            if is_latest:
+                user_text += " ✨"  # Latest message indicator
+            header_row.label(text=user_text, icon='USER')
             header_row.separator()  # Push timestamp to right
             if msg.timestamp:
                 time_label = header_row.row()
@@ -228,7 +278,10 @@ class S647_PT_UnifiedChatPanel(Panel):
                 time_label.label(text=msg.timestamp)
         else:
             # AI message with left-aligned feel
-            header_row.label(text="🤖 S647", icon='BLENDER')
+            ai_text = "🤖 S647"
+            if is_latest:
+                ai_text += " ✨"  # Latest message indicator
+            header_row.label(text=ai_text, icon='BLENDER')
             header_row.separator()
             if msg.timestamp:
                 time_label = header_row.row()
@@ -242,7 +295,14 @@ class S647_PT_UnifiedChatPanel(Panel):
 
         content_lines = msg.content.split('\n')
         displayed_lines = 0
-        max_lines = 6  # Increased for better readability
+
+        # Dynamic max lines based on message age for auto-scroll effect
+        if not is_recent:
+            max_lines = 3  # Compact older messages
+        elif is_latest:
+            max_lines = 15  # Show more of the latest message
+        else:
+            max_lines = 8  # Normal display for recent messages
 
         for line in content_lines:
             if displayed_lines >= max_lines:
@@ -250,17 +310,42 @@ class S647_PT_UnifiedChatPanel(Panel):
             if line.strip():
                 content_row = content_container.row()
                 content_row.scale_y = 0.95
-                # Add subtle indentation for better readability
-                content_row.label(text=f"  {line}")
-                displayed_lines += 1
+                # Split long lines for better readability in chat
+                if len(line) > 80:
+                    words = line.split(' ')
+                    current_line = ""
+                    for word in words:
+                        if len(current_line + word) > 80 and current_line:
+                            content_row.label(text=f"  {current_line.strip()}")
+                            displayed_lines += 1
+                            if displayed_lines >= max_lines:
+                                break
+                            content_row = content_container.row()
+                            content_row.scale_y = 0.95
+                            current_line = word + " "
+                        else:
+                            current_line += word + " "
+                    if current_line.strip() and displayed_lines < max_lines:
+                        content_row.label(text=f"  {current_line.strip()}")
+                        displayed_lines += 1
+                else:
+                    # Add subtle indentation for better readability
+                    content_row.label(text=f"  {line}")
+                    displayed_lines += 1
 
-        # Truncation indicator with expand option
+        # Truncation indicator with expand option (auto-scroll friendly)
         if len(content_lines) > max_lines:
             more_content = content_container.row()
-            more_content.scale_y = 0.8
-            more_content.label(text=f"... ({len(content_lines) - max_lines} more lines)")
-            expand_op = more_content.operator("s647.expand_message", text="Show More", icon='TRIA_DOWN')
-            expand_op.message_index = len(props.conversation_history) - 1
+            more_content.scale_y = 0.7
+            if not is_recent:
+                # For older messages, just show truncation indicator
+                more_content.label(text=f"... ({len(content_lines) - max_lines} more lines)", icon='TRIA_DOWN')
+            else:
+                # For recent messages, allow expansion
+                more_content.label(text=f"... ({len(content_lines) - max_lines} more lines)")
+                expand_op = more_content.operator("s647.expand_message", text="Show More", icon='TRIA_DOWN')
+                expand_op.message_index = message_index
+            expand_op.message_index = message_index
 
         # Enhanced action buttons for AI messages with code
         if msg.role == 'assistant' and msg.has_code:
@@ -303,15 +388,10 @@ class S647_PT_UnifiedChatPanel(Panel):
         # Input header
         header_row = input_container.row()
         header_row.scale_y = 0.8
-        header_row.label(text="✍️ Message", icon='GREASEPENCIL')
+        header_row.label(text=self._get_ui_text("message"), icon='GREASEPENCIL')
 
         # Dynamic placeholder based on mode with enhanced text
-        placeholder_texts = {
-            'chat': "💬 Ask me anything about Blender...",
-            'act': "⚡ Tell me what to do in Blender...",
-            'hybrid': "🧠 Chat or command - I'll adapt..."
-        }
-        placeholder = placeholder_texts.get(props.interaction_mode, "Type your message...")
+        placeholder = self._get_ui_text("input", mode=props.interaction_mode)
 
         # Main input field with improved styling
         input_field_container = input_container.box()
@@ -366,7 +446,7 @@ class S647_PT_UnifiedChatPanel(Panel):
             char_row = send_container.row()
             char_row.scale_y = 0.7
             char_count = len(props.current_prompt)
-            char_row.label(text=f"📝 {char_count} characters")
+            char_row.label(text=self._get_ui_text("character_count", count=char_count))
 
         # Enable/disable logic with visual feedback
         is_enabled = (not api_key_missing and ai_ready and
@@ -390,21 +470,21 @@ class S647_PT_UnifiedChatPanel(Panel):
         # Actions header
         header_row = actions_container.row()
         header_row.scale_y = 0.7
-        header_row.label(text="🚀 Quick Actions", icon='TOOL_SETTINGS')
+        header_row.label(text=self._get_ui_text("quick_actions"), icon='TOOL_SETTINGS')
 
         # Primary actions row
         primary_row = actions_container.row(align=True)
         primary_row.scale_y = 0.9
 
         # Smart suggestions with enhanced styling
-        suggestions_op = primary_row.operator("s647.show_suggestions",
-                                            text="🎯 Suggestions",
-                                            icon='HELP')
+        primary_row.operator("s647.show_suggestions",
+                           text=self._get_ui_text("suggestions"),
+                           icon='HELP')
 
         # Context manager
-        context_op = primary_row.operator("s647.manage_context",
-                                        text="📎 Context",
-                                        icon='OUTLINER')
+        primary_row.operator("s647.manage_context",
+                           text=self._get_ui_text("context"),
+                           icon='OUTLINER')
 
         # Secondary actions row
         secondary_row = actions_container.row(align=True)
@@ -412,42 +492,42 @@ class S647_PT_UnifiedChatPanel(Panel):
 
         # Voice input (if available) with better integration
         if hasattr(props, 'voice_input_available') and props.voice_input_available:
-            voice_op = secondary_row.operator("s647.voice_input",
-                                            text="🎤 Voice",
-                                            icon='SOUND')
+            secondary_row.operator("s647.voice_input",
+                                 text=self._get_ui_text("voice"),
+                                 icon='SOUND')
         else:
             # Placeholder for voice (coming soon)
             voice_placeholder = secondary_row.row()
             voice_placeholder.enabled = False
             voice_placeholder.operator("s647.voice_input",
-                                     text="🎤 Voice (Soon)",
+                                     text=self._get_ui_text("voice_soon"),
                                      icon='SOUND')
 
         # Settings with better icon
-        settings_op = secondary_row.operator("s647.open_settings",
-                                           text="⚙️ Settings",
-                                           icon='PREFERENCES')
+        secondary_row.operator("s647.open_settings",
+                             text=self._get_ui_text("settings"),
+                             icon='PREFERENCES')
 
         # Additional helpful actions
         help_row = actions_container.row(align=True)
         help_row.scale_y = 0.7
 
         # Clear conversation
-        clear_op = help_row.operator("s647.clear_conversation",
-                                   text="🗑️ Clear",
-                                   icon='TRASH')
+        help_row.operator("s647.clear_conversation",
+                        text=self._get_ui_text("clear"),
+                        icon='TRASH')
 
         # Save conversation
-        save_op = help_row.operator("s647.save_conversation",
-                                  text="💾 Save",
-                                  icon='FILE_TICK')
+        help_row.operator("s647.save_conversation",
+                        text=self._get_ui_text("save"),
+                        icon='FILE_TICK')
 
         # Show conversation count
         if props.conversation_history:
             count_row = actions_container.row()
             count_row.scale_y = 0.6
             msg_count = len(props.conversation_history)
-            count_row.label(text=f"💬 {msg_count} messages in conversation")
+            count_row.label(text=self._get_ui_text("message_count", count=msg_count))
 
 
 # Legacy panels removed - now using unified chat interface
@@ -569,10 +649,10 @@ class S647_PT_SmartSuggestionsPanel(Panel):
         props = context.scene.s647
         suggestions = []
 
-        # Get current Blender context
-        active_obj = context.active_object
-        selected_objs = context.selected_objects
-        mode = context.mode
+        # Get current Blender context safely
+        active_obj = getattr(context, 'active_object', None)
+        selected_objs = getattr(context, 'selected_objects', [])
+        mode = getattr(context, 'mode', 'UNKNOWN')
 
         if props.interaction_mode == 'chat':
             # Educational suggestions for Chat mode
@@ -721,6 +801,10 @@ class S647_PT_AdvancedPanel(Panel):
 
             test_row = api_box.row()
             test_row.operator("s647.test_ai_message", text="Test AI Message", icon='PLAY')
+
+            # MCP Integration Test
+            mcp_row = api_box.row()
+            mcp_row.operator("s647.test_mcp_integration", text="Test MCP Integration", icon='PLUGIN')
 
         except ImportError:
             api_box.label(text="AI Engine Error", icon='ERROR')

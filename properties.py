@@ -48,6 +48,7 @@ class S647ConversationMessage(PropertyGroup):
         name="Content",
         description="Message content",
         default="",
+        maxlen=50000,  # Increased limit for long AI responses
     )
     
     timestamp: StringProperty(
@@ -82,6 +83,7 @@ class S647ConversationMessage(PropertyGroup):
             ('command', 'Command', 'User is requesting an action'),
             ('feedback', 'Feedback', 'User is providing feedback'),
             ('clarification', 'Clarification', 'User is clarifying something'),
+            ('response', 'Response', 'AI assistant response'),
             ('unknown', 'Unknown', 'Intent could not be determined'),
         ],
         default='unknown',
@@ -97,7 +99,6 @@ class S647Properties(PropertyGroup):
         items=[
             ('chat', 'Chat Mode', 'Conversational, educational, and exploratory interactions'),
             ('act', 'Act Mode', 'Task-focused, direct action and automation'),
-            ('hybrid', 'Hybrid Mode', 'Intelligent mode switching based on context'),
         ],
         default='chat',
     )
@@ -347,8 +348,6 @@ class S647Properties(PropertyGroup):
             return f"[CHAT MODE] Please respond in a conversational, educational manner. Help the user understand concepts and explore ideas. User says: {base_prompt}"
         elif self.interaction_mode == 'act':
             return f"[ACT MODE] Please focus on direct action and task completion. Provide clear, executable steps. User requests: {base_prompt}"
-        elif self.interaction_mode == 'hybrid':
-            return f"[HYBRID MODE] Analyze the user's intent and respond appropriately - conversational for questions, action-oriented for tasks. User input: {base_prompt}"
 
         return base_prompt
 

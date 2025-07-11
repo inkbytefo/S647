@@ -61,21 +61,52 @@ lib_dir = addon_dir / "lib"
 if str(addon_dir) not in sys.path:
     sys.path.insert(0, str(addon_dir))
 
-# Add lib directory to path for dependencies
-if lib_dir.exists() and str(lib_dir) not in sys.path:
-    sys.path.insert(0, str(lib_dir))
-    print(f"S647: Added lib directory to path: {lib_dir}")
+# Enhanced lib directory setup for MCP and dependencies
+if lib_dir.exists():
+    # Add lib directory to path for dependencies
+    if str(lib_dir) not in sys.path:
+        sys.path.insert(0, str(lib_dir))
+        print(f"S647: Added lib directory to path: {lib_dir}")
 
-# Handle pywin32 on Windows
-if os.name == 'nt' and lib_dir.exists():
-    pywin32_system32 = lib_dir / "pywin32_system32"
-    if pywin32_system32.exists():
+    # Handle pywin32 on Windows with enhanced setup
+    if os.name == 'nt':
+        # Add pywin32 DLL directory
+        pywin32_system32 = lib_dir / "pywin32_system32"
+        if pywin32_system32.exists():
+            try:
+                os.add_dll_directory(str(pywin32_system32))
+                print("S647: Added pywin32 DLL directory")
+            except (OSError, AttributeError):
+                # add_dll_directory might not be available on older Python versions
+                pass
+
+        # Add win32 subdirectories to path for pywin32
+        win32_dirs = [
+            lib_dir / "win32",
+            lib_dir / "win32" / "lib",
+            lib_dir / "Pythonwin"
+        ]
+        for win32_dir in win32_dirs:
+            if win32_dir.exists() and str(win32_dir) not in sys.path:
+                sys.path.insert(0, str(win32_dir))
+                print(f"S647: Added win32 directory to path: {win32_dir}")
+
+        # Set up pywin32 bootstrap if available
         try:
-            os.add_dll_directory(str(pywin32_system32))
-            print("S647: Added pywin32 DLL directory")
-        except (OSError, AttributeError):
-            # add_dll_directory might not be available on older Python versions
-            pass
+            import pywin32_bootstrap
+            print("S647: pywin32_bootstrap loaded successfully")
+        except ImportError:
+            print("S647: pywin32_bootstrap not found, continuing without it")
+
+    # Add MCP specific paths
+    mcp_dir = lib_dir / "mcp"
+    if mcp_dir.exists() and str(mcp_dir) not in sys.path:
+        sys.path.insert(0, str(mcp_dir))
+        print(f"S647: Added MCP directory to path: {mcp_dir}")
+
+    print(f"S647: Library setup complete. Total paths added: {len([p for p in sys.path if str(lib_dir) in p])}")
+else:
+    print(f"S647: Warning - lib directory not found: {lib_dir}")
 
 # Import addon modules
 try:

@@ -31,46 +31,159 @@ from enum import Enum
 
 import bpy
 
-try:
-    # Ensure lib directory is in path for MCP imports
+def _setup_mcp_environment():
+    """Enhanced MCP environment setup with better error handling"""
     import sys
+    import os
     from pathlib import Path
 
     addon_dir = Path(__file__).parent
     lib_dir = addon_dir / "lib"
 
-    print(f"S647 Debug: Addon dir: {addon_dir}")
-    print(f"S647 Debug: Lib dir: {lib_dir}")
-    print(f"S647 Debug: Lib dir exists: {lib_dir.exists()}")
+    print(f"S647 MCP Debug: Setting up MCP environment...")
+    print(f"S647 MCP Debug: Addon dir: {addon_dir}")
+    print(f"S647 MCP Debug: Lib dir: {lib_dir}")
+    print(f"S647 MCP Debug: Lib dir exists: {lib_dir.exists()}")
 
-    if lib_dir.exists():
-        if str(lib_dir) not in sys.path:
-            sys.path.insert(0, str(lib_dir))
-            print(f"S647 Debug: Added {lib_dir} to sys.path")
-        else:
-            print(f"S647 Debug: {lib_dir} already in sys.path")
+    if not lib_dir.exists():
+        print(f"S647 MCP Error: Lib directory not found: {lib_dir}")
+        return False
 
-        # List contents of lib directory
+    # Enhanced path setup for MCP
+    paths_to_add = [
+        lib_dir,
+        lib_dir / "mcp",
+    ]
+
+    # Add Windows-specific paths for pywin32
+    if os.name == 'nt':
+        win32_paths = [
+            lib_dir / "win32",
+            lib_dir / "win32" / "lib",
+            lib_dir / "Pythonwin",
+            lib_dir / "pywin32_system32"
+        ]
+        paths_to_add.extend(win32_paths)
+
+    # Add all paths to sys.path
+    for path in paths_to_add:
+        if path.exists() and str(path) not in sys.path:
+            sys.path.insert(0, str(path))
+            print(f"S647 MCP Debug: Added to sys.path: {path}")
+
+    # Windows-specific DLL setup for pywin32
+    if os.name == 'nt':
+        pywin32_system32 = lib_dir / "pywin32_system32"
+        if pywin32_system32.exists():
+            try:
+                os.add_dll_directory(str(pywin32_system32))
+                print("S647 MCP Debug: Added pywin32 DLL directory")
+            except (OSError, AttributeError) as e:
+                print(f"S647 MCP Debug: Could not add DLL directory: {e}")
+
+        # Try to initialize custom pywin32 bootstrap
         try:
-            lib_contents = list(lib_dir.iterdir())
-            print(f"S647 Debug: Lib directory contents: {[p.name for p in lib_contents]}")
-        except Exception as e:
-            print(f"S647 Debug: Error listing lib contents: {e}")
+            # Import from lib directory
+            import s647_pywin32_bootstrap
+            setup_pywin32_environment = s647_pywin32_bootstrap.setup_pywin32_environment
+            get_pywin32_info = s647_pywin32_bootstrap.get_pywin32_info
+            pywin32_success = setup_pywin32_environment()
+            if pywin32_success:
+                print("S647 MCP Debug: Custom pywin32_bootstrap initialized successfully")
+                # Get pywin32 info for debugging
+                pywin32_info = get_pywin32_info()
+                print(f"S647 MCP Debug: PyWin32 info: {pywin32_info}")
+            else:
+                print("S647 MCP Debug: Custom pywin32_bootstrap failed")
+        except ImportError as e:
+            print(f"S647 MCP Debug: Custom pywin32_bootstrap not available: {e}")
+            # Fallback to standard pywin32_bootstrap
+            try:
+                import pywin32_bootstrap
+                print("S647 MCP Debug: Standard pywin32_bootstrap initialized")
+            except ImportError as e2:
+                print(f"S647 MCP Debug: No pywin32_bootstrap available: {e2}")
 
-    # Try importing MCP with specific error handling for Windows
+    # List lib directory contents for debugging
     try:
+        lib_contents = [p.name for p in lib_dir.iterdir() if p.is_dir()]
+        print(f"S647 MCP Debug: Lib subdirectories: {lib_contents}")
+
+        # Check for specific MCP files
+        mcp_files = list(lib_dir.glob("mcp*"))
+        print(f"S647 MCP Debug: MCP-related items: {[p.name for p in mcp_files]}")
+
+    except Exception as e:
+        print(f"S647 MCP Debug: Error listing lib contents: {e}")
+
+    return True
+
+def _import_mcp_modules():
+    """Import MCP modules with enhanced error handling"""
+    try:
+        # First try to import core MCP modules
+        print("S647 MCP Debug: Attempting to import MCP modules...")
+
         from mcp import ClientSession, StdioServerParameters
+        print("S647 MCP Debug: Core MCP modules imported successfully")
+
         from mcp.client.stdio import stdio_client
-        MCP_AVAILABLE = True
-        print("S647: MCP SDK loaded successfully")
+        print("S647 MCP Debug: MCP stdio client imported successfully")
+
+        return ClientSession, StdioServerParameters, stdio_client, True
+
     except ImportError as mcp_error:
-        # Check if it's a Windows-specific issue
-        if "pywintypes" in str(mcp_error):
-            print("S647: MCP SDK requires Windows-specific dependencies")
-            print("S647: Install with: pip install pywin32")
+        print(f"S647 MCP Error: Failed to import MCP modules: {mcp_error}")
+
+        # Detailed error analysis
+        error_str = str(mcp_error)
+        if "pywintypes" in error_str:
+            print("S647 MCP Error: Missing pywintypes module (Windows dependency)")
+            print("S647 MCP Solution: Ensure pywin32 is properly installed in lib directory")
+        elif "mcp" in error_str:
+            print("S647 MCP Error: MCP module not found")
+            print("S647 MCP Solution: Ensure MCP SDK is installed in lib directory")
+        elif "No module named" in error_str:
+            missing_module = error_str.split("'")[1] if "'" in error_str else "unknown"
+            print(f"S647 MCP Error: Missing dependency: {missing_module}")
+
+        # Show current Python path for debugging
+        import sys
+        mcp_paths = [p for p in sys.path if "lib" in p or "mcp" in p.lower()]
+        print(f"S647 MCP Debug: MCP-related paths in sys.path: {mcp_paths}")
+
+        return None, None, None, False
+
+    except Exception as e:
+        print(f"S647 MCP Error: Unexpected error importing MCP: {e}")
+        import traceback
+        print(f"S647 MCP Debug: Traceback: {traceback.format_exc()}")
+        return None, None, None, False
+
+# Setup MCP environment and import modules
+try:
+    # Setup environment first
+    env_setup_success = _setup_mcp_environment()
+
+    if env_setup_success:
+        # Try to import MCP modules
+        ClientSession, StdioServerParameters, stdio_client, MCP_AVAILABLE = _import_mcp_modules()
+
+        if MCP_AVAILABLE:
+            print("S647: MCP SDK loaded successfully!")
+        else:
+            print("S647: MCP SDK not available - using fallback classes")
+            # Define fallback classes when MCP is not available
+            class ClientSession:
+                pass
+
+            class StdioServerParameters:
+                pass
+
+            stdio_client = None
+    else:
+        print("S647: MCP environment setup failed")
         MCP_AVAILABLE = False
-        print(f"S647: MCP SDK not available: {mcp_error}")
-        print(f"S647 Debug: Current sys.path: {sys.path[:5]}...")  # Show first 5 paths
 
         # Define fallback classes when MCP is not available
         class ClientSession:
@@ -83,9 +196,9 @@ try:
 
 except Exception as e:
     MCP_AVAILABLE = False
-    print(f"S647: MCP SDK error: {e}")
-    print(f"S647 Debug: Current sys.path: {sys.path[:5]}...")  # Show first 5 paths
-    print("S647: Install with: pip install mcp")
+    print(f"S647: Critical MCP setup error: {e}")
+    import traceback
+    print(f"S647 Debug: Traceback: {traceback.format_exc()}")
 
     # Define fallback classes when MCP is not available
     class ClientSession:
