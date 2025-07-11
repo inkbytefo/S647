@@ -139,23 +139,11 @@ class S647AddonPreferences(AddonPreferences):
         precision=2,
     )
     
-    # Safety Settings
+    # Code Execution (simplified)
     enable_code_execution: BoolProperty(
         name="Enable Code Execution",
-        description="Allow the AI to execute Python code in Blender",
-        default=True,  # Enable by default for better user experience
-    )
-
-    confirm_before_execution: BoolProperty(
-        name="Confirm Before Execution",
-        description="Show confirmation dialog before executing AI-generated code",
-        default=False,  # Disable confirmation for smoother workflow
-    )
-
-    sandbox_mode: BoolProperty(
-        name="Simplified Safety Mode",
-        description="Use simplified safety checks (Blender MCP style - only blocks truly dangerous operations)",
-        default=False,  # Disabled by default - new system is already safe
+        description="Allow AI to execute Python code in Blender (safe operations only)",
+        default=True,
     )
     
     # UI Settings
@@ -190,30 +178,18 @@ class S647AddonPreferences(AddonPreferences):
         default='chat',
     )
 
-    enable_smart_mode_switching: BoolProperty(
-        name="Smart Mode Switching",
-        description="Automatically suggest mode switches based on user input",
-        default=True,
-    )
 
-    enable_context_persistence: BoolProperty(
-        name="Context Persistence",
-        description="Save and restore conversation context between sessions",
-        default=True,
-    )
-
-    max_context_memory_size: IntProperty(
-        name="Max Context Memory (KB)",
-        description="Maximum size of persistent context memory in kilobytes",
-        default=100,
-        min=10,
-        max=1000,
-    )
 
     # MCP Settings
     enable_mcp: BoolProperty(
         name="Enable MCP Integration",
         description="Enable Model Context Protocol server integration",
+        default=True,
+    )
+
+    mcp_auto_connect: BoolProperty(
+        name="Auto-connect MCP Servers",
+        description="Automatically connect to enabled MCP servers on startup",
         default=True,
     )
 
@@ -223,17 +199,13 @@ class S647AddonPreferences(AddonPreferences):
         default="{}",
     )
 
-    mcp_auto_connect: BoolProperty(
-        name="Auto-connect MCP Servers",
-        description="Automatically connect to configured MCP servers on startup",
+    mcp_tool_confirmation: BoolProperty(
+        name="Require Tool Confirmation",
+        description="Require user confirmation before executing MCP tools",
         default=False,
     )
 
-    mcp_tool_confirmation: BoolProperty(
-        name="Confirm MCP Tool Calls",
-        description="Show confirmation dialog before executing MCP tools",
-        default=True,
-    )
+
     
     def draw(self, context):
         """Draw the preferences UI"""
@@ -307,19 +279,7 @@ class S647AddonPreferences(AddonPreferences):
         except Exception:
             pass
         
-        # Safety Settings Section
-        box = layout.box()
-        box.label(text="Safety & Execution Settings", icon='LOCKED')
-        
-        col = box.column()
-        col.prop(self, "enable_code_execution")
-        
-        if self.enable_code_execution:
-            col.prop(self, "confirm_before_execution")
-            col.prop(self, "sandbox_mode")
-            
-            if not self.confirm_before_execution:
-                col.label(text="✓ Using simplified safety system (Blender MCP style)", icon='INFO')
+
         
         # UI Settings Section
         box = layout.box()
@@ -330,15 +290,12 @@ class S647AddonPreferences(AddonPreferences):
         col.prop(self, "auto_save_conversations")
         col.prop(self, "conversation_history_limit")
 
-        # Mode Settings Section
+        # Mode Settings Section (simplified)
         box = layout.box()
         box.label(text="Interaction Modes", icon='SETTINGS')
 
         col = box.column()
         col.prop(self, "default_interaction_mode")
-        col.prop(self, "enable_smart_mode_switching")
-        col.prop(self, "enable_context_persistence")
-        col.prop(self, "max_context_memory_size")
 
         # MCP Settings Section
         box = layout.box()
@@ -346,10 +303,9 @@ class S647AddonPreferences(AddonPreferences):
 
         col = box.column()
         col.prop(self, "enable_mcp")
+        col.prop(self, "mcp_tool_confirmation")
 
         if self.enable_mcp:
-            col.prop(self, "mcp_auto_connect")
-            col.prop(self, "mcp_tool_confirmation")
 
             # MCP Status
             try:
@@ -409,7 +365,7 @@ class S647AddonPreferences(AddonPreferences):
             else:
                 col.label(text="✗ Custom provider not fully configured", icon='X')
 
-        col.label(text=f"Code Execution: {'Enabled' if self.enable_code_execution else 'Disabled'}")
+        col.label(text=f"Code Execution: {'✓ Enabled' if self.enable_code_execution else '✗ Disabled'}")
 
 def get_preferences():
     """Get the addon preferences"""

@@ -23,12 +23,11 @@ import bpy
 from bpy.types import Panel
 
 from .preferences import get_preferences
-from . import utils
 
-class S647_PT_UnifiedChatPanel(Panel):
-    """Modern unified chat interface inspired by Augment Code & Cline"""
+class S647_PT_MainPanel(Panel):
+    """Main S647 panel with chat interface and essential controls"""
     bl_label = "S647 AI Assistant"
-    bl_idname = "S647_PT_unified_chat_panel"
+    bl_idname = "S647_PT_main_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "S647"
@@ -55,11 +54,7 @@ class S647_PT_UnifiedChatPanel(Panel):
                 'placeholder_chat': "💬 Ask me anything about Blender...",
                 'placeholder_act': "⚡ Tell me what to do in Blender...",
                 'character_count': "📝 {count} characters",
-                'quick_actions': "🚀 Quick Actions",
-                'suggestions': "🎯 Suggestions",
-                'context': "📎 Context",
-                'voice': "🎤 Voice",
-                'voice_soon': "🎤 Voice (Soon)",
+                # Removed unused quick action text keys
                 'settings': "⚙️ Settings",
                 'clear': "🗑️ Clear",
                 'save': "💾 Save",
@@ -109,11 +104,14 @@ class S647_PT_UnifiedChatPanel(Panel):
         # Main chat stream
         self.draw_chat_stream(layout, props, context)
 
+        # Inline context controls (simplified)
+        self.draw_inline_context_controls(layout, props)
+
         # Smart input section
         self.draw_smart_input(layout, props, api_key_missing, ai_ready, config_error_message)
 
-        # Quick actions footer
-        self.draw_quick_actions(layout, props)
+        # Utility actions bar
+        self.draw_utility_actions(layout, props)
 
     def draw_mode_pills(self, layout, props):
         """Draw modern pill-style mode selector with enhanced styling"""
@@ -356,27 +354,44 @@ class S647_PT_UnifiedChatPanel(Panel):
             actions_row = actions_container.row(align=True)
             actions_row.scale_y = 1.0
 
-            # Apply code button (primary action)
-            apply_op = actions_row.operator("s647.apply_message_code", text="▶ Apply", icon='PLAY')
-            apply_op.message_index = len(props.conversation_history) - 1
+            # Mode-specific action buttons
+            if props.interaction_mode == 'chat':
+                # Chat mode: Show all options for learning
+                apply_op = actions_row.operator("s647.apply_message_code", text="▶ Apply", icon='PLAY')
+                apply_op.message_index = len(props.conversation_history) - 1
 
-            # Secondary actions
-            explain_op = actions_row.operator("s647.explain_code", text="❓ Explain", icon='QUESTION')
-            explain_op.message_index = len(props.conversation_history) - 1
+                explain_op = actions_row.operator("s647.explain_code", text="❓ Explain", icon='QUESTION')
+                explain_op.message_index = len(props.conversation_history) - 1
 
-            modify_op = actions_row.operator("s647.modify_code", text="✏️ Modify", icon='GREASEPENCIL')
-            modify_op.message_index = len(props.conversation_history) - 1
+                modify_op = actions_row.operator("s647.modify_code", text="✏️ Modify", icon='GREASEPENCIL')
+                modify_op.message_index = len(props.conversation_history) - 1
+            else:
+                # Act mode: Minimal buttons since code auto-executes
+                if not msg.code_executed:
+                    # Only show manual apply if auto-execution failed
+                    apply_op = actions_row.operator("s647.apply_message_code", text="⚡ Execute", icon='PLAY')
+                    apply_op.message_index = len(props.conversation_history) - 1
+
+                # Always show modify option for tweaking
+                modify_op = actions_row.operator("s647.modify_code", text="✏️ Modify", icon='GREASEPENCIL')
+                modify_op.message_index = len(props.conversation_history) - 1
 
             # Execution status with enhanced feedback
             if msg.code_executed:
                 status_row = actions_container.row()
                 status_row.scale_y = 0.8
-                status_row.label(text="✅ Code executed successfully", icon='CHECKMARK')
+                if props.interaction_mode == 'act':
+                    status_row.label(text="✅ Auto-executed in Act mode", icon='CHECKMARK')
+                else:
+                    status_row.label(text="✅ Code executed successfully", icon='CHECKMARK')
             else:
-                # Show code preview indicator
+                # Show code preview indicator with mode-specific text
                 preview_row = actions_container.row()
                 preview_row.scale_y = 0.7
-                preview_row.label(text="📝 Contains executable code", icon='SCRIPT')
+                if props.interaction_mode == 'act':
+                    preview_row.label(text="⚡ Ready for auto-execution", icon='SCRIPT')
+                else:
+                    preview_row.label(text="📝 Contains executable code", icon='SCRIPT')
 
     def draw_smart_input(self, layout, props, api_key_missing, ai_ready, config_error_message=""):
         """Draw smart input section with modern chat interface styling"""
@@ -460,274 +475,195 @@ class S647_PT_UnifiedChatPanel(Panel):
             else:
                 status_row.label(text="⚠️ Check configuration", icon='ERROR')
 
-    def draw_quick_actions(self, layout, props):
-        """Draw modern quick actions footer with enhanced UX"""
-        # Quick actions container with modern styling
-        actions_container = layout.box()
-        actions_container.use_property_split = False
+    def draw_utility_actions(self, layout, props):
+        """Draw utility actions bar with save, settings, and clear"""
+        # Utility actions container
+        utility_container = layout.box()
+        utility_container.use_property_split = False
 
-        # Actions header
-        header_row = actions_container.row()
-        header_row.scale_y = 0.7
-        header_row.label(text=self._get_ui_text("quick_actions"), icon='TOOL_SETTINGS')
+        # Actions row
+        actions_row = utility_container.row(align=True)
+        actions_row.scale_y = 0.9
 
-        # Primary actions row
-        primary_row = actions_container.row(align=True)
-        primary_row.scale_y = 0.9
+        # Save conversation (markdown format)
+        actions_row.operator("s647.save_conversation",
+                           text=self._get_ui_text("save"),
+                           icon='FILE_TICK')
 
-        # Smart suggestions with enhanced styling
-        primary_row.operator("s647.show_suggestions",
-                           text=self._get_ui_text("suggestions"),
-                           icon='HELP')
-
-        # Context manager
-        primary_row.operator("s647.manage_context",
-                           text=self._get_ui_text("context"),
-                           icon='OUTLINER')
-
-        # Secondary actions row
-        secondary_row = actions_container.row(align=True)
-        secondary_row.scale_y = 0.8
-
-        # Voice input (if available) with better integration
-        if hasattr(props, 'voice_input_available') and props.voice_input_available:
-            secondary_row.operator("s647.voice_input",
-                                 text=self._get_ui_text("voice"),
-                                 icon='SOUND')
-        else:
-            # Placeholder for voice (coming soon)
-            voice_placeholder = secondary_row.row()
-            voice_placeholder.enabled = False
-            voice_placeholder.operator("s647.voice_input",
-                                     text=self._get_ui_text("voice_soon"),
-                                     icon='SOUND')
-
-        # Settings with better icon
-        secondary_row.operator("s647.open_settings",
-                             text=self._get_ui_text("settings"),
-                             icon='PREFERENCES')
-
-        # Additional helpful actions
-        help_row = actions_container.row(align=True)
-        help_row.scale_y = 0.7
+        # Settings
+        actions_row.operator("s647.open_settings",
+                           text=self._get_ui_text("settings"),
+                           icon='PREFERENCES')
 
         # Clear conversation
-        help_row.operator("s647.clear_conversation",
-                        text=self._get_ui_text("clear"),
-                        icon='TRASH')
+        actions_row.operator("s647.clear_conversation",
+                           text=self._get_ui_text("clear"),
+                           icon='TRASH')
 
-        # Save conversation
-        help_row.operator("s647.save_conversation",
-                        text=self._get_ui_text("save"),
-                        icon='FILE_TICK')
-
-        # Show conversation count
+        # Show conversation count if there are messages
         if props.conversation_history:
-            count_row = actions_container.row()
+            count_row = utility_container.row()
             count_row.scale_y = 0.6
             msg_count = len(props.conversation_history)
             count_row.label(text=self._get_ui_text("message_count", count=msg_count))
 
+    def draw_inline_context_controls(self, layout, props):
+        """Draw simplified inline context controls"""
+        if not props.show_context_panel:
+            return
 
-# Legacy panels removed - now using unified chat interface
+        # Compact context controls
+        context_container = layout.box()
+        context_container.use_property_split = False
 
-# Legacy Response and Conversation panels removed - functionality moved to unified chat
+        # Context header (collapsible style)
+        header_row = context_container.row()
+        header_row.scale_y = 0.8
+        header_row.label(text="Context", icon='SCENE')
 
-class S647_PT_ContextPanel(Panel):
-    """Panel for context management and memory"""
-    bl_label = "Context & Memory"
-    bl_idname = "S647_PT_context_panel"
+        # Quick context mode selector
+        mode_row = context_container.row()
+        mode_row.scale_y = 0.9
+        mode_row.prop(props, "context_mode", text="")
+
+        # Thread info (compact)
+        if props.current_thread_id:
+            thread_row = context_container.row()
+            thread_row.scale_y = 0.7
+            thread_row.label(text=f"Thread: {props.thread_title or props.current_thread_id[:8]}")
+            thread_row.operator("s647.create_thread", text="", icon='ADD')
+
+
+# Legacy panels removed - now using streamlined interface
+
+class S647_PT_ToolsPanel(Panel):
+    """Combined tools panel for MCP integration and code execution"""
+    bl_label = "Tools & Execution"
+    bl_idname = "S647_PT_tools_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "S647"
-    bl_parent_id = "S647_PT_unified_chat_panel"
+    bl_parent_id = "S647_PT_main_panel"
     bl_options = {'DEFAULT_CLOSED'}
-
-    @classmethod
-    def poll(cls, context):
-        props = context.scene.s647
-        return props.show_context_panel
 
     def draw(self, context):
         layout = self.layout
         props = context.scene.s647
+        prefs = get_preferences()
 
-        # Thread Management
-        thread_box = layout.box()
-        thread_box.label(text="Conversation Thread:", icon='OUTLINER')
+        # Code Execution Section
+        if props.pending_code or props.code_execution_result:
+            self.draw_code_execution_section(layout, props, prefs)
+            layout.separator()
 
-        thread_row = thread_box.row()
-        thread_row.prop(props, "current_thread_id", text="ID")
-        thread_row.prop(props, "thread_title", text="Title")
-
-        # Thread Actions
-        thread_actions = thread_box.row(align=True)
-        thread_actions.operator("s647.create_thread", text="New", icon='ADD')
-        thread_actions.operator("s647.rename_thread", text="Rename", icon='GREASEPENCIL')
-
-        # Show thread info
-        thread_info = thread_box.column()
-        thread_count = len(set(msg.thread_id for msg in props.conversation_history))
-        current_thread_msgs = len([msg for msg in props.conversation_history if msg.thread_id == props.current_thread_id])
-        thread_info.label(text=f"Total threads: {thread_count}")
-        thread_info.label(text=f"Messages in current: {current_thread_msgs}")
-
-        # Context Memory Status
-        memory_box = layout.box()
-        memory_box.label(text="Memory Status:", icon='MEMORY')
-
-        if props.context_memory:
-            memory_box.label(text="✓ Persistent context available")
+        # MCP Integration Section
+        if prefs.enable_mcp:
+            self.draw_mcp_section(layout, prefs)
         else:
-            memory_box.label(text="○ No persistent context")
+            # MCP disabled indicator
+            mcp_box = layout.box()
+            mcp_box.label(text="MCP Integration", icon='NETWORK_DRIVE')
+            mcp_box.label(text="Disabled in preferences", icon='INFO')
 
-        if props.session_context:
-            memory_box.label(text="✓ Session context active")
-        else:
-            memory_box.label(text="○ No session context")
+    def draw_code_execution_section(self, layout, props, prefs):
+        """Draw code execution controls"""
+        code_box = layout.box()
+        code_box.label(text="Code Execution", icon='CONSOLE')
 
-        # Memory Management Actions
-        actions_box = layout.box()
-        actions_box.label(text="Memory Actions:", icon='TOOL_SETTINGS')
+        # Pending code preview
+        if props.pending_code:
+            preview_box = code_box.box()
+            preview_box.label(text="Pending Code:", icon='SCRIPT')
 
-        actions_row1 = actions_box.row(align=True)
-        actions_row1.operator("s647.save_context", text="Save Context", icon='FILE_TICK')
-        actions_row1.operator("s647.load_context", text="Load Context", icon='FILE_FOLDER')
+            # Show first few lines of code
+            code_lines = props.pending_code.split('\n')
+            for i, line in enumerate(code_lines[:5]):
+                if line.strip():
+                    preview_box.label(text=f"  {line}")
 
-        actions_row2 = actions_box.row(align=True)
-        actions_row2.operator("s647.clear_context", text="Clear Context", icon='TRASH')
-        actions_row2.operator("s647.export_context", text="Export", icon='EXPORT')
+            if len(code_lines) > 5:
+                preview_box.label(text=f"... ({len(code_lines) - 5} more lines)")
 
-class S647_PT_SmartSuggestionsPanel(Panel):
-    """Panel for AI-generated smart suggestions"""
-    bl_label = "Smart Suggestions"
-    bl_idname = "S647_PT_smart_suggestions_panel"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "S647"
-    bl_parent_id = "S647_PT_unified_chat_panel"
-    bl_options = {'DEFAULT_CLOSED'}
+            # Execution controls
+            controls_row = code_box.row(align=True)
+            controls_row.operator("s647.execute_code", text="Execute", icon='PLAY')
+            controls_row.operator("s647.copy_code", text="Copy", icon='COPYDOWN')
 
-    @classmethod
-    def poll(cls, context):
-        props = context.scene.s647
-        return props.show_smart_suggestions
+        # Execution result
+        if props.code_execution_result:
+            result_box = code_box.box()
+            result_box.label(text="Last Result:", icon='CHECKMARK')
 
-    def draw(self, context):
-        layout = self.layout
-        props = context.scene.s647
+            result_lines = props.code_execution_result.split('\n')
+            for line in result_lines[:3]:  # Show first 3 lines
+                if line.strip():
+                    result_box.label(text=f"  {line}")
 
-        # Mode-specific suggestions
-        suggestions_box = layout.box()
-        suggestions_box.label(text=f"Suggestions for {props.interaction_mode.title()} Mode:", icon='HELP')
+            if len(result_lines) > 3:
+                result_box.label(text=f"... ({len(result_lines) - 3} more lines)")
 
-        # Generate suggestions based on current context
-        suggestions = self.get_smart_suggestions(context)
+    def draw_mcp_section(self, layout, prefs):
+        """Draw simplified MCP integration controls"""
+        try:
+            from . import mcp_client
 
-        if suggestions:
-            for suggestion in suggestions[:5]:  # Show max 5 suggestions
-                suggestion_row = suggestions_box.row()
-                suggestion_row.operator("s647.apply_suggestion", text=suggestion['text'], icon=suggestion['icon'])
-                suggestion_row.operator_context = 'INVOKE_DEFAULT'
-                # Store suggestion data in operator
-                op = suggestion_row.operator("s647.apply_suggestion", text="", icon='PLAY')
-                op.suggestion_text = suggestion['prompt']
-        else:
-            suggestions_box.label(text="No suggestions available", icon='INFO')
+            if not mcp_client.is_mcp_available():
+                mcp_box = layout.box()
+                mcp_box.label(text="MCP Integration", icon='NETWORK_DRIVE')
+                mcp_box.label(text="MCP SDK not available", icon='ERROR')
+                return
 
-        # Suggestion controls
-        controls_box = layout.box()
-        controls_box.label(text="Suggestion Controls:", icon='TOOL_SETTINGS')
+            manager = mcp_client.get_mcp_manager()
+            if not manager:
+                mcp_box = layout.box()
+                mcp_box.label(text="MCP Integration", icon='NETWORK_DRIVE')
+                mcp_box.label(text="Manager not initialized", icon='ERROR')
+                return
 
-        controls_row = controls_box.row(align=True)
-        controls_row.operator("s647.refresh_suggestions", text="Refresh", icon='FILE_REFRESH')
-        controls_row.operator("s647.toggle_suggestions", text="Toggle", icon='HIDE_OFF')
+            mcp_box = layout.box()
+            mcp_box.label(text="MCP Integration", icon='NETWORK_DRIVE')
 
-    def get_smart_suggestions(self, context):
-        """Generate smart suggestions based on current context"""
-        props = context.scene.s647
-        suggestions = []
+            # Server status (simplified)
+            servers = manager.get_all_servers()
+            if servers:
+                status_row = mcp_box.row()
+                connected_count = sum(1 for name in servers.keys()
+                                    if manager.get_server_status(name).value == "connected")
+                status_row.label(text=f"Servers: {connected_count}/{len(servers)} connected")
 
-        # Get current Blender context safely
-        active_obj = getattr(context, 'active_object', None)
-        selected_objs = getattr(context, 'selected_objects', [])
-        mode = getattr(context, 'mode', 'UNKNOWN')
+                # Quick management
+                mgmt_row = mcp_box.row(align=True)
+                mgmt_row.operator("s647.manage_mcp_servers", text="Manage", icon='SETTINGS')
+                mgmt_row.operator("s647.load_mcp_config_file", text="Reload", icon='FILE_REFRESH')
+            else:
+                mcp_box.label(text="No servers configured")
+                mcp_box.operator("s647.manage_mcp_servers", text="Add Servers", icon='ADD')
 
-        if props.interaction_mode == 'chat':
-            # Educational suggestions for Chat mode
-            if active_obj:
-                suggestions.append({
-                    'text': f"Learn about {active_obj.type.lower()} objects",
-                    'prompt': f"Explain {active_obj.type.lower()} objects in Blender and their properties",
-                    'icon': 'QUESTION'
-                })
+            # Tools summary
+            tools = manager.get_all_tools()
+            if tools:
+                tools_row = mcp_box.row()
+                tools_row.scale_y = 0.8
+                tools_row.label(text=f"Available tools: {len(tools)}")
 
-            if mode == 'EDIT_MESH':
-                suggestions.append({
-                    'text': "Mesh editing techniques",
-                    'prompt': "What are the best mesh editing techniques in Blender?",
-                    'icon': 'QUESTION'
-                })
+        except Exception as e:
+            mcp_box = layout.box()
+            mcp_box.label(text="MCP Integration", icon='NETWORK_DRIVE')
+            mcp_box.label(text=f"Error: {str(e)}", icon='ERROR')
 
-            suggestions.append({
-                'text': "Blender workflow tips",
-                'prompt': "Give me some workflow tips for efficient Blender usage",
-                'icon': 'QUESTION'
-            })
 
-        elif props.interaction_mode == 'act':
-            # Action suggestions for Act mode
-            if active_obj:
-                suggestions.append({
-                    'text': f"Add modifier to {active_obj.name}",
-                    'prompt': f"Add a subdivision surface modifier to {active_obj.name}",
-                    'icon': 'MODIFIER'
-                })
+# Legacy Context Panel removed - functionality integrated into main panel
 
-                suggestions.append({
-                    'text': f"Create material for {active_obj.name}",
-                    'prompt': f"Create a basic material for {active_obj.name}",
-                    'icon': 'MATERIAL'
-                })
-
-            if len(selected_objs) > 1:
-                suggestions.append({
-                    'text': f"Join {len(selected_objs)} objects",
-                    'prompt': f"Join the {len(selected_objs)} selected objects",
-                    'icon': 'OBJECT_DATAMODE'
-                })
-
-            suggestions.append({
-                'text': "Create basic scene setup",
-                'prompt': "Create a basic scene with lighting and camera",
-                'icon': 'SCENE_DATA'
-            })
-
-        else:  # hybrid mode
-            # Mixed suggestions for Hybrid mode
-            if active_obj:
-                suggestions.append({
-                    'text': f"Improve {active_obj.name}",
-                    'prompt': f"How can I improve {active_obj.name} and what should I do next?",
-                    'icon': 'COMMUNITY'
-                })
-
-            suggestions.append({
-                'text': "Optimize current scene",
-                'prompt': "Analyze my current scene and suggest optimizations",
-                'icon': 'COMMUNITY'
-            })
-
-        return suggestions
+# Legacy Smart Suggestions Panel removed - functionality can be integrated into main panel if needed
 
 class S647_PT_AdvancedPanel(Panel):
-    """Advanced options panel"""
+    """Advanced options panel - streamlined for power users"""
     bl_label = "Advanced Options"
     bl_idname = "S647_PT_advanced_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "S647"
-    bl_parent_id = "S647_PT_unified_chat_panel"
+    bl_parent_id = "S647_PT_main_panel"
     bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
@@ -768,250 +704,57 @@ class S647_PT_AdvancedPanel(Panel):
         pref_row = ai_info_box.row()
         pref_row.operator("preferences.addon_show", text="Configure in Preferences", icon='TOOL_SETTINGS').module = __package__
 
-        # Safety settings
-        safety_box = layout.box()
-        safety_box.label(text="Safety Settings:", icon='LOCKED')
-        safety_box.prop(prefs, "enable_code_execution")
 
-        if prefs.enable_code_execution:
-            safety_box.prop(prefs, "confirm_before_execution")
-            safety_box.prop(prefs, "sandbox_mode")
 
-        # API Status and Testing
-        api_box = layout.box()
-        api_box.label(text="API Status:", icon='NETWORK_DRIVE')
+        # System Status (simplified)
+        status_box = layout.box()
+        status_box.label(text="System Status:", icon='INFO')
 
         try:
             from . import ai_engine
             api_status = ai_engine.get_api_status()
 
-            status_row = api_box.row()
+            # Simple status display
+            status_row = status_box.row()
             if api_status['initialized']:
-                status_row.label(text="✓ Connected", icon='CHECKMARK')
+                status_row.label(text="✓ AI Engine Ready", icon='CHECKMARK')
             else:
-                status_row.label(text="✗ Not Connected", icon='X')
-
-            test_row = api_box.row(align=True)
-            test_row.operator("s647.test_connection", text="Test Connection", icon='NETWORK_DRIVE')
-            test_row.operator("s647.initialize_ai", text="Reinitialize", icon='FILE_REFRESH')
-
-            debug_row = api_box.row()
-            debug_row.operator("s647.debug_ai", text="Debug Info", icon='CONSOLE')
-
-            test_row = api_box.row()
-            test_row.operator("s647.test_ai_message", text="Test AI Message", icon='PLAY')
-
-            # MCP Integration Test
-            mcp_row = api_box.row()
-            mcp_row.operator("s647.test_mcp_integration", text="Test MCP Integration", icon='PLUGIN')
+                status_row.label(text="✗ AI Engine Not Ready", icon='X')
+                # Only show reinitialize if there's a problem
+                reinit_row = status_box.row()
+                reinit_row.operator("s647.initialize_ai", text="Reinitialize", icon='FILE_REFRESH')
 
         except ImportError:
-            api_box.label(text="AI Engine Error", icon='ERROR')
+            status_box.label(text="✗ AI Engine Error", icon='ERROR')
 
-        # Statistics
-        stats_box = layout.box()
-        stats_box.label(text="Statistics:", icon='INFO')
-        stats_box.label(text=f"Total Requests: {props.total_requests}")
-        stats_box.label(text=f"Successful: {props.successful_requests}")
-        stats_box.label(text=f"Code Executions: {props.code_executions}")
-
+        # Usage Statistics (compact)
         if props.total_requests > 0:
-            success_rate = (props.successful_requests / props.total_requests) * 100
-            stats_box.label(text=f"Success Rate: {success_rate:.1f}%")
+            stats_box = layout.box()
+            stats_box.label(text="Session Stats:", icon='GRAPH')
 
-class S647_PT_CodeExecutionPanel(Panel):
-    """Panel for code execution preview and control"""
-    bl_label = "Code Execution"
-    bl_idname = "S647_PT_code_execution_panel"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "S647"
-    bl_parent_id = "S647_PT_unified_chat_panel"
-    bl_options = {'DEFAULT_CLOSED'}
+            # Compact stats display
+            stats_row = stats_box.row()
+            stats_row.label(text=f"Requests: {props.total_requests}")
 
-    @classmethod
-    def poll(cls, context):
-        props = context.scene.s647
-        return bool(props.pending_code or props.code_execution_result)
+            if props.total_requests > 0:
+                success_rate = (props.successful_requests / props.total_requests) * 100
+                stats_row.label(text=f"Success: {success_rate:.0f}%")
 
-    def draw(self, context):
-        layout = self.layout
-        props = context.scene.s647
-        prefs = get_preferences()
+            if props.code_executions > 0:
+                exec_row = stats_box.row()
+                exec_row.label(text=f"Code Executions: {props.code_executions}")
 
-        # Pending code section
-        if props.pending_code:
-            pending_box = layout.box()
-            pending_box.label(text="Pending Code:", icon='SCRIPT')
-
-            # Show code preview
-            code_lines = props.pending_code.split('\n')
-            for line in code_lines[:5]:  # Show first 5 lines
-                if line.strip():
-                    pending_box.label(text=line, icon='DOT')
-
-            if len(code_lines) > 5:
-                pending_box.label(text=f"... ({len(code_lines) - 5} more lines)")
-
-            # Safety check
-            is_safe, warnings = utils.is_safe_code(props.pending_code)
-            if not is_safe:
-                warning_box = pending_box.box()
-                warning_box.label(text="⚠️ Safety Warnings:", icon='ERROR')
-                for warning in warnings:
-                    warning_box.label(text=f"• {warning}")
-
-            # Execution controls
-            exec_row = pending_box.row(align=True)
-            if prefs.enable_code_execution:
-                exec_row.operator("s647.execute_code", text="Execute", icon='PLAY')
-            else:
-                exec_row.label(text="Code execution disabled")
-
-            # Analysis and copy controls
-            analysis_row = pending_box.row(align=True)
-            analysis_row.operator("s647.analyze_code", text="Analyze", icon='VIEWZOOM').code = props.pending_code
-            analysis_row.operator("s647.copy_code", text="Copy", icon='COPYDOWN').code = props.pending_code
-
-        # Execution result section
-        if props.code_execution_result:
-            result_box = layout.box()
-            result_box.label(text="Last Execution Result:", icon='CONSOLE')
-
-            result_lines = props.code_execution_result.split('\n')
-            for line in result_lines[:10]:  # Show first 10 lines
-                if line.strip():
-                    result_box.label(text=line)
-
-            if len(result_lines) > 10:
-                result_box.label(text=f"... ({len(result_lines) - 10} more lines)")
+# Legacy Code Execution Panel removed - functionality moved to Tools panel
 
 
-class S647_PT_MCPPanel(Panel):
-    """Panel for MCP server management and status"""
-    bl_label = "MCP Integration"
-    bl_idname = "S647_PT_mcp_panel"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "S647"
-    bl_parent_id = "S647_PT_unified_chat_panel"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        prefs = get_preferences()
-
-        if not prefs.enable_mcp:
-            layout.label(text="MCP integration disabled", icon='INFO')
-            layout.operator("screen.userpref_show", text="Enable in Preferences", icon='TOOL_SETTINGS')
-            return
-
-        try:
-            from . import mcp_client
-
-            if not mcp_client.is_mcp_available():
-                layout.label(text="MCP SDK not available", icon='ERROR')
-                layout.label(text="Install with: pip install mcp")
-                return
-
-            manager = mcp_client.get_mcp_manager()
-            if not manager:
-                layout.label(text="MCP Manager not initialized", icon='ERROR')
-                return
-
-            # Server status section
-            box = layout.box()
-            box.label(text="Server Status:", icon='NETWORK_DRIVE')
-
-            servers = manager.get_all_servers()
-            if not servers:
-                box.label(text="No servers configured")
-                box.operator("s647.manage_mcp_servers", text="Add Servers", icon='ADD')
-            else:
-                for name, config in servers.items():
-                    row = box.row()
-                    status = manager.get_server_status(name)
-
-                    # Status indicator
-                    if status.value == "connected":
-                        row.label(text="", icon='CHECKMARK')
-                        row.label(text=name)
-                        row.operator("s647.disconnect_mcp_server", text="", icon='X').server_name = name
-                    elif status.value == "connecting":
-                        row.label(text="", icon='TIME')
-                        row.label(text=f"{name} (connecting...)")
-                    elif status.value == "error":
-                        row.label(text="", icon='ERROR')
-                        row.label(text=f"{name} (error)")
-                        row.operator("s647.connect_mcp_server", text="", icon='CHECKMARK').server_name = name
-                    else:
-                        row.label(text="", icon='RADIOBUT_OFF')
-                        row.label(text=name)
-                        row.operator("s647.connect_mcp_server", text="", icon='CHECKMARK').server_name = name
-
-            # Available tools section
-            tools = manager.get_all_tools()
-            if tools:
-                layout.separator()
-                box = layout.box()
-                box.label(text=f"Available Tools ({len(tools)}):", icon='TOOL_SETTINGS')
-
-                # Show first few tools
-                for i, (tool_key, tool) in enumerate(tools.items()):
-                    if i >= 5:  # Limit display
-                        break
-                    row = box.row()
-                    row.label(text=f"• {tool.name}")
-                    row.label(text=f"({tool.server_name})")
-
-                if len(tools) > 5:
-                    box.label(text=f"... and {len(tools) - 5} more")
-
-            # Available resources section
-            resources = manager.get_all_resources()
-            if resources:
-                layout.separator()
-                box = layout.box()
-                box.label(text=f"Available Resources ({len(resources)}):", icon='FILE_FOLDER')
-
-                # Show first few resources
-                for i, (resource_key, resource) in enumerate(resources.items()):
-                    if i >= 3:  # Limit display
-                        break
-                    row = box.row()
-                    row.label(text=f"• {resource.name}")
-                    row.label(text=f"({resource.server_name})")
-
-                if len(resources) > 3:
-                    box.label(text=f"... and {len(resources) - 3} more")
-
-            # Management buttons
-            layout.separator()
-
-            # Configuration management
-            config_box = layout.box()
-            config_box.label(text="Configuration:", icon='SETTINGS')
-
-            config_row1 = config_box.row()
-            config_row1.operator("s647.import_mcp_config", text="Import JSON", icon='IMPORT')
-            config_row1.operator("s647.load_mcp_config_file", text="Load File", icon='FILE_REFRESH')
-
-            config_row2 = config_box.row()
-            config_row2.operator("s647.export_mcp_config", text="Export", icon='EXPORT')
-            config_row2.operator("s647.manage_mcp_servers", text="Manage", icon='SETTINGS')
-
-        except Exception as e:
-            layout.label(text=f"MCP Error: {str(e)}", icon='ERROR')
+# Legacy MCP Panel removed - functionality moved to Tools panel
 
 
-# List of all panel classes for registration
+# List of all panel classes for registration - Streamlined hierarchy
 classes = [
-    S647_PT_UnifiedChatPanel,      # New unified chat panel (primary)
-    S647_PT_ContextPanel,          # Context management
-    S647_PT_SmartSuggestionsPanel, # Smart suggestions
-    S647_PT_AdvancedPanel,         # Advanced options
-    S647_PT_CodeExecutionPanel,    # Code execution
-    S647_PT_MCPPanel,              # MCP integration
+    S647_PT_MainPanel,             # Main chat panel with essential controls
+    S647_PT_ToolsPanel,            # Combined tools: MCP + Code execution
+    S647_PT_AdvancedPanel,         # Advanced options (collapsed by default)
 ]
 
 def register():

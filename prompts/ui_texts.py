@@ -53,10 +53,7 @@ class UITexts:
         'execute': "▶ Apply",
         'explain': "❓ Explain",
         'modify': "✏️ Modify",
-        'suggestions': "🎯 Suggestions",
-        'context': "📎 Context",
-        'voice': "🎤 Voice",
-        'voice_soon': "🎤 Voice (Soon)",
+        # Removed unused quick action buttons
         'settings': "⚙️ Settings",
         'test_connection': "Test Connection",
         'reinitialize': "Reinitialize",
@@ -102,15 +99,15 @@ class UITexts:
     
     # Mode descriptions
     MODE_DESCRIPTIONS = {
-        'chat': "💬 Educational Focus - Learn and explore Blender",
-        'act': "⚡ Action Focus - Get things done quickly"
+        'chat': "💬 Educational Focus - Learn, discuss, and manually execute code",
+        'act': "⚡ Action Focus - Direct execution with auto-running code"
     }
 
     # Welcome messages
     WELCOME_MESSAGES = {
         'main': "👋 Welcome to S647!",
-        'chat': "💬 Ask me anything about Blender - I'm here to help you learn!",
-        'act': "⚡ Tell me what you want to do and I'll help you accomplish it!",
+        'chat': "💬 Ask me anything about Blender - I'll explain and provide code for you to review!",
+        'act': "⚡ Tell me what to do in Blender - I'll generate and auto-execute safe code!",
         'quick_start': "Try: 'Create a cube' or 'How do I add materials?'"
     }
     
@@ -119,7 +116,7 @@ class UITexts:
         'interaction_mode': "Interaction Mode",
         'conversation': "💬 Conversation",
         'message': "✍️ Message",
-        'quick_actions': "🚀 Quick Actions",
+        # 'quick_actions' removed - functionality simplified
         'thread_management': "Conversation Thread:",
         'memory_status': "Memory Status:",
         'memory_actions': "Memory Actions:",

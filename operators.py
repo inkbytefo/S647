@@ -258,48 +258,69 @@ class S647_OT_CopyCode(Operator):
         return {'FINISHED'}
 
 class S647_OT_SaveConversation(Operator):
-    """Save conversation to file"""
+    """Save conversation to markdown file"""
     bl_idname = "s647.save_conversation"
     bl_label = "Save Conversation"
-    bl_description = "Save the conversation history to a text file"
+    bl_description = "Save the conversation history to a markdown file"
     bl_options = {'REGISTER'}
-    
+
     filepath: StringProperty(
         name="File Path",
         description="Path to save the conversation",
-        default="s647_conversation.txt",
+        default="s647_conversation.md",
         subtype='FILE_PATH',
     )
     
     def execute(self, context):
         props = context.scene.s647
-        
+
         if not props.conversation_history:
             self.report({'WARNING'}, "No conversation to save")
             return {'CANCELLED'}
-        
+
         try:
             import datetime
-            
+
             with open(self.filepath, 'w', encoding='utf-8') as f:
-                f.write(f"S647 Conversation Export\n")
-                f.write(f"Exported: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                f.write(f"Scene: {context.scene.name}\n")
-                f.write("=" * 50 + "\n\n")
-                
+                # Markdown header
+                f.write("# S647 Conversation Export\n\n")
+                f.write(f"**Exported:** {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  \n")
+                f.write(f"**Scene:** {context.scene.name}  \n")
+                f.write(f"**Messages:** {len(props.conversation_history)}\n\n")
+                f.write("---\n\n")
+
                 for i, msg in enumerate(props.conversation_history):
-                    f.write(f"[{msg.timestamp}] {msg.role.upper()}:\n")
-                    f.write(f"{msg.content}\n")
-                    if msg.has_code:
-                        f.write("(Contains executable code)\n")
-                    f.write("\n" + "-" * 30 + "\n\n")
-            
+                    # Role as header
+                    role_icon = "🤖" if msg.role == "assistant" else "👤"
+                    f.write(f"## {role_icon} {msg.role.title()}\n\n")
+
+                    # Timestamp
+                    f.write(f"*{msg.timestamp}*\n\n")
+
+                    # Content with proper markdown formatting
+                    content = msg.content.strip()
+
+                    # Check if content contains code blocks
+                    if "```" in content:
+                        # Content already has code blocks, write as-is
+                        f.write(f"{content}\n\n")
+                    elif msg.has_code:
+                        # Wrap entire content in code block if it's marked as having code
+                        f.write(f"```python\n{content}\n```\n\n")
+                    else:
+                        # Regular text content
+                        f.write(f"{content}\n\n")
+
+                    # Add separator between messages
+                    if i < len(props.conversation_history) - 1:
+                        f.write("---\n\n")
+
             self.report({'INFO'}, f"Conversation saved to {self.filepath}")
-            
+
         except Exception as e:
             self.report({'ERROR'}, f"Failed to save conversation: {str(e)}")
             return {'CANCELLED'}
-        
+
         return {'FINISHED'}
     
     def invoke(self, context, event):
@@ -1755,14 +1776,14 @@ classes = [
     S647_OT_ApplyMessageCode,
     S647_OT_ExplainCode,
     S647_OT_ModifyCode,
-    S647_OT_ShowSuggestions,
-    S647_OT_ManageContext,
-    S647_OT_VoiceInput,
+    # S647_OT_ShowSuggestions removed - placeholder functionality
+    # S647_OT_ManageContext removed - placeholder functionality
+    # S647_OT_VoiceInput removed - placeholder functionality
     S647_OT_OpenSettings,
-    S647_OT_SaveContext,
-    S647_OT_LoadContext,
-    S647_OT_ClearContext,
-    S647_OT_ExportContext,
+    # S647_OT_SaveContext removed - context management simplified
+    # S647_OT_LoadContext removed - context management simplified
+    # S647_OT_ClearContext removed - context management simplified
+    # S647_OT_ExportContext removed - context management simplified
     S647_OT_CreateThread,
     S647_OT_SwitchThread,
     S647_OT_RenameThread,
@@ -1771,9 +1792,9 @@ classes = [
     S647_OT_NextStep,
     S647_OT_PreviousStep,
     S647_OT_CancelTask,
-    S647_OT_ApplySuggestion,
-    S647_OT_RefreshSuggestions,
-    S647_OT_ToggleSuggestions,
+    # S647_OT_ApplySuggestion removed - suggestions functionality removed
+    # S647_OT_RefreshSuggestions removed - suggestions functionality removed
+    # S647_OT_ToggleSuggestions removed - suggestions functionality removed
     # S647_OT_GenerateContextSuggestions removed - integrated into smart suggestions
     # MCP Operators
     S647_OT_ManageMCPServers,

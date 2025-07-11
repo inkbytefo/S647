@@ -328,6 +328,22 @@ class MCPConfigManager:
                     print(f"S647: Added server configuration: {server_config['name']}")
             
             print(f"S647: Successfully loaded {success_count}/{len(server_configs)} server configurations")
+
+            # Auto-connect if enabled in preferences
+            try:
+                from .preferences import get_preferences
+                prefs = get_preferences()
+                if prefs and prefs.mcp_auto_connect:
+                    print("S647: Auto-connecting to MCP servers...")
+                    connect_count = 0
+                    for server_config in server_configs:
+                        if server_config["enabled"]:
+                            if manager.connect_server(server_config["name"]):
+                                connect_count += 1
+                    print(f"S647: Auto-connected to {connect_count}/{len([s for s in server_configs if s['enabled']])} enabled servers")
+            except Exception as e:
+                print(f"S647: Auto-connect failed: {e}")
+
             return success_count > 0
             
         except Exception as e:
@@ -366,3 +382,39 @@ def validate_mcp_config(config_text: str) -> Dict[str, Any]:
     if config:
         return manager.validate_config(config)
     return {"valid": False, "errors": ["Invalid JSON format"], "warnings": []}
+
+
+def auto_connect_servers() -> int:
+    """Auto-connect to all enabled MCP servers"""
+    try:
+        from . import mcp_client
+        from .preferences import get_preferences
+
+        prefs = get_preferences()
+        if not prefs or not prefs.mcp_auto_connect:
+            print("S647: Auto-connect disabled in preferences")
+            return 0
+
+        manager = mcp_client.get_mcp_manager()
+        if not manager:
+            print("S647: MCP manager not available")
+            return 0
+
+        servers = manager.get_all_servers()
+        connect_count = 0
+
+        for server_name, config in servers.items():
+            if config.enabled:
+                print(f"S647: Connecting to {server_name}...")
+                if manager.connect_server(server_name):
+                    connect_count += 1
+                    print(f"S647: Successfully connected to {server_name}")
+                else:
+                    print(f"S647: Failed to connect to {server_name}")
+
+        print(f"S647: Auto-connected to {connect_count}/{len([s for s in servers.values() if s.enabled])} enabled servers")
+        return connect_count
+
+    except Exception as e:
+        print(f"S647: Auto-connect error: {e}")
+        return 0

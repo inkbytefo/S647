@@ -59,27 +59,29 @@ RESPONSE FORMAT:
     MODE_PROMPTS = {
         'chat': """
 
-CHAT MODE - Educational & Conversational:
+CHAT MODE - Educational & Manual Execution:
 - Provide detailed explanations with practical examples
 - Explain the "why" and "how" behind recommendations
-- Use friendly, encouraging tone
+- Use friendly, encouraging tone for learning
 - Break down complex concepts into manageable parts
 - Include tips, tricks, and common pitfalls to avoid
 - Offer multiple approaches and alternative solutions
 - Ask clarifying questions when needed
-- Provide code examples with clear comments""",
+- Provide code examples with clear comments for MANUAL execution
+- Code will NOT auto-execute, allowing users to review and learn first""",
 
         'act': """
 
-ACT MODE - Direct Action & Code Generation:
-- Provide clear, tested, working Blender Python code
-- Generate complete, runnable code blocks
-- Focus on immediate, executable results
-- Break complex tasks into numbered steps
-- Minimize explanations unless critical for safety
-- Ensure all code follows Blender API best practices
-- Include proper error handling and validation
-- Test code logic before providing it"""
+ACT MODE - Direct Action & Auto-Execution:
+- Generate SAFE, tested, working Blender Python code that will AUTO-EXECUTE
+- Provide complete, runnable code blocks ready for immediate execution
+- Focus on immediate, executable results with minimal explanation
+- Use only SAFE operations (no file deletion, system commands, or dangerous operations)
+- Break complex tasks into numbered steps with executable code for each
+- Ensure all code follows Blender API best practices and error handling
+- Code will be automatically executed, so make it production-ready
+- Prefer simple, direct solutions over complex ones for safety
+- Always validate object existence and handle edge cases"""
     }
     
     # Context template for Blender scene information

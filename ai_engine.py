@@ -88,6 +88,14 @@ def initialize():
 
         if success:
             print(f"S647: AI Engine initialized successfully - {message}")
+
+            # Initialize MCP if available
+            if _mcp_available:
+                try:
+                    mcp_client.initialize_mcp()
+                    print("S647: MCP client initialized")
+                except Exception as e:
+                    print(f"S647: MCP initialization failed: {e}")
         else:
             print(f"S647: AI Engine initialization failed - {message}")
 
@@ -359,6 +367,65 @@ def _handle_act_mode_response(props, response_text: str):
             props.set_current_task(task_description, clean_steps)
             props.update_task_progress(0, 1)  # Start with first step
 
+    # AUTO-EXECUTE CODE IN ACT MODE
+    # In Act mode, automatically execute safe code blocks
+    from . import utils
+    from .preferences import get_preferences
+
+    prefs = get_preferences()
+    print(f"S647: Act mode auto-execute check - Code execution enabled: {prefs.enable_code_execution}")
+
+    if prefs.enable_code_execution:
+        code_blocks = utils.extract_python_code(response_text)
+        print(f"S647: Found {len(code_blocks)} code blocks in response")
+
+        if code_blocks:
+            # Get the first code block
+            code, _, _ = code_blocks[0]
+            print(f"S647: First code block: {code}")
+
+            # Check if code is safe for auto-execution
+            is_safe, warnings = utils.is_safe_code(code)
+            print(f"S647: Code safety check - Safe: {is_safe}, Warnings: {warnings}")
+
+            if is_safe:
+                # Auto-execute the code in Act mode
+                try:
+                    from . import code_executor
+                    print("S647: About to execute code in Act mode...")
+                    print(f"S647: Code to execute: '{code}'")
+
+                    result = code_executor.execute_code(code)
+                    print(f"S647: Code execution result: '{result}'")
+
+                    # Update execution result
+                    props.code_execution_result = f"Auto-executed: {result}"
+                    props.pending_code = ""  # Clear pending code since it's executed
+                    props.code_executions += 1
+
+                    # Mark the last message as executed
+                    if props.conversation_history:
+                        last_msg = props.conversation_history[-1]
+                        if last_msg.role == 'assistant' and last_msg.has_code:
+                            last_msg.code_executed = True
+
+                    print(f"S647: Auto-executed code in Act mode: {result}")
+
+                except Exception as e:
+                    print(f"S647: Auto-execution failed: {str(e)}")
+                    import traceback
+                    print(f"S647: Traceback: {traceback.format_exc()}")
+                    # Keep code as pending if auto-execution fails
+                    props.pending_code = code
+            else:
+                # Code is not safe for auto-execution, keep as pending
+                props.pending_code = code
+                print(f"S647: Code not auto-executed due to safety concerns: {warnings}")
+        else:
+            print("S647: No code blocks found in response")
+    else:
+        print("S647: Code execution disabled in preferences")
+
 def _handle_chat_mode_response(props, response_text: str):
     """Handle Chat mode specific response processing"""
     # In chat mode, we might want to extract learning points or topics
@@ -370,6 +437,18 @@ def _handle_chat_mode_response(props, response_text: str):
         current_context = props.session_context
         new_context = f"{current_context}\nDiscussed: {', '.join(keywords)}" if current_context else f"Discussed: {', '.join(keywords)}"
         props.session_context = new_context[:1000]  # Limit context size
+
+    # MANUAL CODE EXECUTION IN CHAT MODE
+    # In Chat mode, codes are NOT auto-executed, they remain as pending
+    # This allows users to review and understand the code before execution
+    from . import utils
+
+    code_blocks = utils.extract_python_code(response_text)
+    if code_blocks:
+        # Keep code as pending for manual execution
+        code, _, _ = code_blocks[0]
+        props.pending_code = code
+        print(f"S647: Code available for manual execution in Chat mode")
 
 def _extract_keywords(text: str) -> list:
     """Extract key Blender-related terms from text"""
@@ -516,8 +595,8 @@ def _handle_tool_calls(message, messages, api_params) -> str:
                 import json
                 arguments = json.loads(tool_call.function.arguments)
 
-                # Call MCP tool with security check
-                result = mcp_client.call_mcp_tool(tool_call.function.name, arguments, user_confirmation=True)
+                # Call MCP tool - bypass user confirmation for AI calls
+                result = mcp_client.call_mcp_tool(tool_call.function.name, arguments, user_confirmation=False)
 
                 if result and result.get("success"):
                     content = result.get("content", [])

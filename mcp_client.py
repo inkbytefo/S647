@@ -503,7 +503,7 @@ class MCPClientManager:
         # Check if user confirmation is required
         from .preferences import get_preferences
         prefs = get_preferences()
-        if prefs.mcp_tool_confirmation and not user_confirmation:
+        if hasattr(prefs, 'mcp_tool_confirmation') and prefs.mcp_tool_confirmation and not user_confirmation:
             return {
                 "error": "User confirmation required",
                 "requires_confirmation": True,
@@ -780,10 +780,10 @@ def disconnect_mcp_server(server_name: str) -> bool:
     return manager.disconnect_server(server_name) if manager else False
 
 
-def call_mcp_tool(tool_name: str, arguments: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def call_mcp_tool(tool_name: str, arguments: Dict[str, Any], user_confirmation: bool = False) -> Optional[Dict[str, Any]]:
     """Call an MCP tool"""
     manager = get_mcp_manager()
-    return manager.call_tool(tool_name, arguments) if manager else None
+    return manager.call_tool(tool_name, arguments, user_confirmation) if manager else None
 
 
 def get_mcp_tools() -> Dict[str, MCPTool]:
