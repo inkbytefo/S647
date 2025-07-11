@@ -9,6 +9,22 @@
       "description": "Dynamic and reflective problem-solving through thought sequences. Helps AI break down complex problems into manageable steps with revision and branching capabilities.",
       "enabled": true,
       "timeout": 30
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
+    },
+    "ddg-search": {
+      "command": "uvx",
+      "args": ["duckduckgo-mcp-server"]
+    },
+    "screenMonitorMCP": {
+      "command": "python",
+      "args": ["c:/Users/tpoyr/OneDrive/Desktop/S647/ScreenMonitorMCP/main.py"],
+      "cwd": "c:/Users/tpoyr/OneDrive/Desktop/S647/ScreenMonitorMCP"
     }
   }
 }
