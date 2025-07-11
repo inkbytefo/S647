@@ -345,7 +345,6 @@ class S647_PT_UnifiedChatPanel(Panel):
                 more_content.label(text=f"... ({len(content_lines) - max_lines} more lines)")
                 expand_op = more_content.operator("s647.expand_message", text="Show More", icon='TRIA_DOWN')
                 expand_op.message_index = message_index
-            expand_op.message_index = message_index
 
         # Enhanced action buttons for AI messages with code
         if msg.role == 'assistant' and msg.has_code:
